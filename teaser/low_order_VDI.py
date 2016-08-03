@@ -101,6 +101,68 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     Q_solarRadToOuterWalli   = -splitFacSolar[-dim] * Q["solarRad"]
     Q_loadsToOuterWalli      = -splitFacLoads[-dim] * Q["loadsRad"]
     
+    
+    
+    # Define system of linear equations: 
+    # A * x = rhs
+    # x = [T_ow, T_owi, T_iw, T_iwi, T_air, Q_air, Q_HC] (all at time t)
+    
+    # Dummy time step
+    t = 1
+    
+    # Fixed heat flow:
+    A = np.zeros((7,7))
+    rhs = np.zeros(A.shape[0])
+
+    A[0,0] = C1o / dt + 1 / RRest + 1 / R1o
+    A[0,1] = -1 / R1o
+    A[1,0] = 1 / R1o
+    A[1,1] = -Ao * (alphaRad[t] + alphaowi) - 1 / R1o
+    A[1,3] = Ao * alphaRad[t]
+    A[1,4] = Ao * alphaowi
+    A[2,2] = C1i / dt + 1 / R1i
+    A[2,3] = -1 / R1i
+    A[3,1] = Ao * alphaRad[t]
+    A[3,2] = 1 / R1i
+    A[3,3] = -Ao * alphaRad[t] - Ai * alphaiwi - 1 / R1i
+    A[3,4] = Ai * alphaiwi
+    A[4,1] = Ao * alphaowi
+    A[4,3] = Ai * alphaiwi
+    A[4,4] = -Ao * alphaowi - Ai * alphaiwi - ventRate * Vair * cair * rhoair
+    A[4,5] = -1
+    A[4,6] = 1
+    A[5,4] = ventRate * Vair * cair * rhoair
+    A[5,5] = -1
+
+    A[6,6] = 1
+    
+    rhs = 
+        
+    # Free heat flow:
+    A = np.zeros((6,6))
+    rhs = np.zeros(A.shape[0])
+    
+    A[0,0] = C1o / dt + 1 / RRest + 1 / R1o
+    A[0,1] = -1 / R1o
+    A[1,0] = 1 / R1o
+    A[1,1] = -Ao * (alphaRad[t] + alphaowi) - 1 / R1o
+    A[1,3] = Ao * alphaRad[t]
+    A[1,4] = Ao * alphaowi
+    A[2,2] = C1i / dt + 1 / R1i
+    A[2,3] = -1 / R1i
+    A[3,1] = Ao * alphaRad[t]
+    A[3,2] = 1 / R1i
+    A[3,3] = -Ao * alphaRad[t] - Ai * alphaiwi - 1 / R1i
+    A[3,4] = Ai * alphaiwi
+    A[4,1] = Ao * alphaowi
+    A[4,3] = Ai * alphaiwi
+    A[4,4] = -Ao * alphaowi - Ai * alphaiwi - ventRate * Vair * cair * rhoair
+    A[4,5] = -1
+    A[4,6] = 1
+    A[5,4] = ventRate * Vair * cair * rhoair
+    A[5,5] = -1
+    
+    
 #%% add variables to the model
     """
     variables:
