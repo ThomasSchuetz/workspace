@@ -13,6 +13,91 @@ import numpy as np
 def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTemp, alphaRad, ventRate,
                          Q_ig, source_igRad, krad, t_set_heating, t_set_cooling, dt=1,
                          T_air_init=293.15, T_iw_init=295.15, T_ow_init=295.15):
+    """
+    Compute indoor air temperature and necessary (convective) heat gains from
+    an ideal heater/cooler based on the VDI 6007-1 model.
+    
+    Parameters
+    ----------
+    houseData: dict
+        Dictionary describing the building physics. The following entries are
+        required:
+        
+        - withInnerwalls : Boolean
+            True if inner walls are considered, False if not
+        - R1i : Float
+            Heat resistance inner walls in K/W
+        - C1i : Float
+            Capacity of inner walls in ``Wh/K``
+        - Ai : Float
+            Surface area of inner walls in m2
+        - RRest : Float
+            Heat resistance between outer wall's capacity and environment in K/W
+        - R1o : Float
+            Heat resistance outer walls in K/W
+        - C1o : Float
+            Capacity of outer walls in ``Wh/K``
+        - Ao : Float
+            Surface area of outer walls in m2
+        - Aw : List of Floats
+            Window areas in each direction in m2
+        - Vair : Float
+            Room's indoor air volume in m3
+        - rhoair : Float
+            Density of air in kg/m3
+        - cair : Float
+            Specific heat capacity of air in Wh/kgK
+        - splitfac : Float
+            Factor for conv. part of rad. through windows (w/o unit)
+        - g : Float
+            Total energy transmittance of windows (w/o unit)
+        - alphaiwi : Float
+            Inner wall's coefficient of heat transfer (inner side) in W/m2K
+        - alphaowi : Float
+            Outer wall's coefficient of heat transfer (inner side) in W/m2K
+    weatherTemperature : List of Float
+        Environment temperatures in K
+    solarRad_in : List of Float
+        Solar radiation input (weighted with window areas) in W/m2
+    equalAirTemp : List of Float
+        Equal air temperature based on VDI in K
+    alphaRad : List of Float
+        Radiative heat transfer coef. between inner and outer walls in W/m2K
+    ventRate : List of Float
+        Ventilation rate in 1/h
+    Q_ig : List of Float
+        Internal convective gains in W
+    source_igRad
+    krad
+    t_set_heating : List of Float
+        Heating set temperatures. If the air temperature without heating drops
+        below this temperature, a heating load that just fulfills this 
+        temperature is computed
+    t_set_cooling : List of Float
+        Cooling set temperatures. If the air temperature without heating rises
+        above this temperature, a cooling load that just fulfills this 
+        temperature is computed
+    dt : Float
+        Length of one timestep in hours. Standard is 1 hour
+    T_air_init : Float
+        Initial air temperature in Kelvin
+    T_iw_init : Float
+        Initial temperature of the inner wall's capacity in Kelvin
+    T_ow_init : Float
+        Initial temperature of the outer wall's capacity  in Kelvin
+    
+    Returns
+    -------
+    T_air : Array of Float
+        Indoor air temperature in Kelvin
+    Q_HC : Array of Float
+        Heating (positive) and cooling (negative) loads in Watt
+    
+    Current limitations
+    -------------------
+    1. Only written for thermal zones with windows, internal walls and 
+       external walls
+    """
 #%% partialReducedOrderModel                                          
     # parameters
     
@@ -79,7 +164,7 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     # A * x = rhs
     # x = [T_ow, T_owi, T_iw, T_iwi, T_air, Q_air, Q_HC] (all at time t)
     
-    # Results
+    # Results' initialization
     T_ow = []
     T_owi = []
     T_iw = []
@@ -88,7 +173,7 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     Q_air = []
     Q_HC = []
     
-    # Dummy time step
+    # Initial temperatures
     T_ow_prev = T_ow_init
     T_iw_prev = T_iw_init
     T_air_prev = T_air_init
@@ -98,6 +183,7 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
         A = np.zeros((7,7))
         rhs = np.zeros(A.shape[0])
     
+        # Fill matrix coefficients
         A[0,0] = C1o / dt + 1 / RRest + 1 / R1o
         A[0,1] = -1 / R1o
         A[1,0] = 1 / R1o
@@ -115,18 +201,21 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
         A[4,4] = -Ao * alphaowi - Ai * alphaiwi - ventRate[t] * Vair * cair * rhoair
         A[4,5] = -1
         A[4,6] = 1
-        A[5,4] = ventRate[t] * Vair * cair * rhoair
+        A[5,4] = Vair * cair * rhoair / dt
         A[5,5] = -1
         
+        # Fill right hand side
         rhs[0] = equalAirTemp[t] / RRest + C1o * T_ow_prev / dt
         rhs[1] = -Q_solarRadToOuterWalli[t] - Q_loadsToOuterWalli[t]
         rhs[2] = C1i * T_iw_prev / dt
         rhs[3] = -Q_solarRadToInnerWall[t] - Q_loadsToInnerWall[t]
-        rhs[4] = ventRate[t] * Vair * cair * rhoair * Tv[t] + Q_solar_conv[t] + Q_ig[t]
+        rhs[4] = -ventRate[t] * Vair * cair * rhoair * Tv[t] - Q_solar_conv[t] - Q_ig[t]
         rhs[5] = rhoair * cair * Vair * T_air_prev / dt
-    
+        
+        # Calculate current time step
         x = _calc_timestep(A, rhs, t_set_heating[t], t_set_cooling[t])
 
+        # Retrieve results
         T_ow.append(x[0])
         T_owi.append(x[1])
         T_iw.append(x[2])
@@ -135,52 +224,99 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
         Q_air.append(x[5])
         Q_HC.append(x[6])
         
+        # Update initial temperatures
         T_ow_prev = x[0]
         T_iw_prev = x[2]
         T_air_prev = x[4]
     
-    return (T_air, Q_HC)
+    return (np.array(T_air), np.array(Q_HC))
 
 #%%
 def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15):
+    """
+    Calculate the temperatures and heat flow rate for the current time step.
     
+    Parameters
+    ----------
+    A : 2d array of floats
+        Coefficients describing the VDI model
+    rhs : Array of floats
+        Right hand side of these equations
+    t_set_heating : Float
+        Temperature below which heating demand is computed (in Kelvin)
+    t_set_cooling : Float
+        Temperature above which cooling demand is computed (in Kelvin)
+    """
     # Calculate without further heat inputs to determine if heating 
     # or cooling is needed
     # x = [T_ow, T_owi, T_iw, T_iwi, T_air, Q_air, Q_HC]
     x_noHeat = _calc_temperatue(A, rhs, q_hc_fix=0)
     
     if x_noHeat[4] < t_set_heating:
+        # Indoor air temperature below heating set temperature
         return _calc_heatflow(A, rhs, t_air_set=t_set_heating)
     elif x_noHeat[4] > t_set_cooling:
+        # Indoor air temperature above cooling set temperature
         return _calc_heatflow(A, rhs, t_air_set=t_set_cooling)
     else:
+        # Indoor air temperature between both set temperature -> no further 
+        # action required
         return x_noHeat
 
 #%%
 def _calc_temperatue(A, rhs, q_hc_fix=0):
-
+    """
+    Run the model with a fixed convective heating/cooling gain
+    
+    Parameters
+    ----------
+    A : 2d array of floats
+        Coefficients describing the VDI model
+    rhs : Array of floats
+        Right hand side of these equations
+    q_hc_fix : Float
+        Heating/cooling input into the zone in Watt
+    """
+    
     # Delete all entries in the final line of A:
     A[-1,:] = 0
     
     # Add Q_HC = q_hc_fix
-    A[6,6] = 1
-    rhs[6] = q_hc_fix
+    A[-1,6] = 1
+    rhs[-1] = q_hc_fix
     
+    # Solve updated model
     result = np.linalg.solve(A, rhs)
     
+    # Return results
     return result
 
 #%%
 def _calc_heatflow(A, rhs, t_air_set=293.15):
+    """
+    Run the model with a fixed convective heating/cooling gain
+    
+    Parameters
+    ----------
+    A : 2d array of floats
+        Coefficients describing the VDI model
+    rhs : Array of floats
+        Right hand side of these equations
+    t_air_set : Float
+        Zone's set temperature in Kelvin
+    """
+
     # Delete all entries in the final line of A:
     A[-1,:] = 0
     
     # Add T_air = t_air_set
-    A[6,4] = 1
-    rhs[6] = t_air_set
+    A[-1,4] = 1
+    rhs[-1] = t_air_set
     
+    # Solve updated model
     result = np.linalg.solve(A, rhs)
     
+    # Return results
     return result
 
 #%%
@@ -211,8 +347,8 @@ if __name__ == "__main__":
     
     weatherTemperature = Tv
     
-    t_set_heating   = np.zeros(time_steps)# + 293.15
-    t_set_cooling   = np.zeros(time_steps)+600# + 300.15
+    t_set_heating   = np.zeros(time_steps)# + 293.15  # in Kelvin
+    t_set_cooling   = np.zeros(time_steps)+600# + 300.15  # in Kelvin
     
     T_air, Q_hc = reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in,
                                        equalAirTemp, alphaRad, ventRate, Q_ig, source_igRad, krad,
