@@ -9,7 +9,7 @@ from __future__ import division
 import numpy as np
 import LowOrderModelVDIvalidation as LOM
 
-def testCase1(houseData, n, timesteps, model, testcase):
+def testCase1(timesteps, n=4):
     
     withInnerwalls = True
     R1i = 0.000595515
@@ -40,7 +40,7 @@ def testCase1(houseData, n, timesteps, model, testcase):
     cair = 1007/3600    
     
     Tv = np.zeros(timesteps) + 295.15 # in K
-    ventRate = 0
+    ventRate = np.zeros(timesteps)
     
     solarRad_in = np.zeros(timesteps)   
     source_igRad = np.zeros(timesteps)
@@ -51,15 +51,13 @@ def testCase1(houseData, n, timesteps, model, testcase):
         Q["ig"][q] = 1e3
         
     equalAirTemp = np.zeros(timesteps)+295.15 # all temperatures in K
-    C_HC = 0
-    Tig = np.zeros(timesteps)
     
     return   (R1i, C1i, Ai, RRest, R1o, C1o, Ao, RWin, Aw, A_win_tot,
              alphaiwi, epsi, alphaowi, epso, alphaRad,
              Tv, ventRate, solarRad_in, Vair, rhoair, cair,
              source_igRad, Q["ig"], equalAirTemp,
              withInnerwalls, withWindows, withOuterwalls,
-             splitfac, epsw, g, C_HC, Tig, model)
+             splitfac, epsw, g)
              
 #%%
 def testCase2(houseData, n, timesteps, model, testcase):
