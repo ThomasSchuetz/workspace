@@ -11,8 +11,8 @@ from __future__ import division
 import numpy as np
 
 def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTemp, alphaRad, ventRate,
-                         Q_ig, source_igRad, krad, t_set_heating, t_set_cooling, dt=1,
-                         T_air_init=293.15, T_iw_init=295.15, T_ow_init=295.15):
+                         Q_ig, source_igRad, krad, t_set_heating, t_set_cooling, dt=3600,
+                         T_air_init=295.15, T_iw_init=295.15, T_ow_init=295.15):
     """
     Compute indoor air temperature and necessary (convective) heat gains from
     an ideal heater/cooler based on the VDI 6007-1 model.
@@ -125,8 +125,12 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     
     alphaiwi        = houseData["alphaiwi"] # Coefficient of heat transfer for inner walls
     alphaowi        = houseData["alphaowi"] # Outer wall's coefficient of heat transfer (inner side)
+    alphaWall       = houseData["alphaWall"] # Heat transfer between exterior wall and eq. air temp.
     
     A_win_tot = sum(Aw)
+
+    # Adjust RRest to incorporate alphaWall
+    RRest = RRest + 1/alphaWall
 
 #%% Time variable inputs
     # convective heat entry from solar iradiation   
@@ -160,7 +164,7 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     Q_solarRadToOuterWalli = -splitFacSolar[-dim] * Q_solar_rad
     Q_loadsToOuterWalli    = -splitFacLoads[-dim] * Q_loads_rad
     
-#%%     Define system of linear equations: 
+#%% Define system of linear equations: 
     # A * x = rhs
     # x = [T_ow, T_owi, T_iw, T_iwi, T_air, Q_air, Q_HC] (all at time t)
     
@@ -209,7 +213,7 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
         rhs[1] = -Q_solarRadToOuterWalli[t] - Q_loadsToOuterWalli[t]
         rhs[2] = C1i * T_iw_prev / dt
         rhs[3] = -Q_solarRadToInnerWall[t] - Q_loadsToInnerWall[t]
-        rhs[4] = -ventRate[t] * Vair * cair * rhoair * Tv[t] - Q_solar_conv[t] - Q_ig[t]
+        rhs[4] = -ventRate[t] * Vair * cair * rhoair * weatherTemperature[t] - Q_solar_conv[t] - Q_ig[t]
         rhs[5] = rhoair * cair * Vair * T_air_prev / dt
         
         # Calculate current time step
@@ -329,27 +333,41 @@ if __name__ == "__main__":
 #        equalAirTemp = pkl.load(fin)
 #        alphaRad = pkl.load(fin)
     
-    time_steps = 24
+    times_per_hour = 60
+    time_steps = 24*60 * times_per_hour # 60 days
     import validationVDITestcases as tc
     (R1i, C1i, Ai, RRest, R1o, C1o, Ao, RWin, Aw, A_win_tot,
-     alphaiwi, epsi, alphaowi, epso, alphaRad,
+     alphaiwi, epsi, alphaowi, epso, alphaWall, alphaRad,
      Tv, ventRate, solarRad_in, Vair, rhoair, cair,
      source_igRad, Q_ig, equalAirTemp,
      withInnerwalls, withWindows, withOuterwalls,
-     splitfac, epsw, g) = tc.testCase1(time_steps)
+     splitfac, epsw, g,
+     T_air_ref_1, T_air_ref_10, T_air_ref_60) = tc.testCase1(time_steps, times_per_hour=60)
      
     krad = 1
     
     houseData = {"R1i":R1i, "C1i":C1i, "Ai":Ai, "RRest":RRest, "R1o":R1o, "C1o":C1o,
                  "Ao":Ao, "Aw":Aw, "Vair":Vair, "rhoair":rhoair, "cair":cair,
                  "splitfac":splitfac, "g":g, "alphaiwi":alphaiwi, "alphaowi":alphaowi,
-                 "withInnerwalls":True}
+                 "alphaWall": alphaWall, "withInnerwalls":True}
     
     weatherTemperature = Tv
     
     t_set_heating   = np.zeros(time_steps)# + 293.15  # in Kelvin
     t_set_cooling   = np.zeros(time_steps)+600# + 300.15  # in Kelvin
-    
+
     T_air, Q_hc = reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in,
                                        equalAirTemp, alphaRad, ventRate, Q_ig, source_igRad, krad,
-                                       t_set_heating, t_set_cooling)
+                                       t_set_heating, t_set_cooling, dt=int(3600/times_per_hour))
+    
+    T_air_c = T_air - 273.15
+    T_air_mean = np.zeros(24*60) # 60 days
+    for i in range(len(T_air_mean)):
+        T_air_mean[i] = np.mean(T_air_c[i*times_per_hour:(i+1)*times_per_hour])
+    T_air_1 = T_air_mean[0:24]
+    T_air_10 = T_air_mean[216:240]
+    T_air_60 = T_air_mean[1416:1440]
+    
+    print np.max(np.abs(T_air_1 - T_air_ref_1))
+    print np.max(np.abs(T_air_10 - T_air_ref_10))
+    print np.max(np.abs(T_air_60 - T_air_ref_60))

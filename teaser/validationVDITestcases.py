@@ -9,18 +9,73 @@ from __future__ import division
 import numpy as np
 import LowOrderModelVDIvalidation as LOM
 
-def testCase1(timesteps, n=4):
+#%% Load a standard result file
+def load_res(filename):
+    res = np.loadtxt(filename, delimiter=",", skiprows=1) # Skip time step 0
+    
+    # ignore time
+    result = res[:,1:res.shape[1]]
+    
+    day1 = result[0:24, :]
+    day2 = result[24:48, :]
+    day3 = result[48:72, :]
+    
+    return (day1, day2, day3)
+
+#%% Common house inputs
+def get_house_data(case=1):
+    if case in (1,2):
+        return {"R1i": 0.000595693407511, 
+                "C1i": 14836354.6282, 
+                "Ai": 75.5, 
+                "RRest": 0.03895919557, 
+                "R1o": 0.00436791293674, 
+                "C1o": 1600848.94,
+                "Ao": 10.5, 
+                "Aw": np.zeros(1), 
+                "Vair": 52.5, 
+                "rhoair": 1.19, 
+                "cair": 0,
+                "splitfac": 0.09,
+                "g": 1,
+                "alphaiwi": 2.24,
+                "alphaowi": 2.7,
+                "alphaWall": 25 * 10.5, # 25 * Ao
+                "withInnerwalls": True}
+    elif case in (3,4):
+        return {"R1i": 0.003237138, 
+                "C1i": 7297100, 
+                "Ai": 75.5, 
+                "RRest": 0.039330865, 
+                "R1o": 0.00404935160802, 
+                "C1o": 47900,
+                "Ao": 10.5, 
+                "Aw": np.zeros(1), 
+                "Vair": 52.5, 
+                "rhoair": 1.19, 
+                "cair": 0,
+                "splitfac": 0.09,
+                "g": 1,
+                "alphaiwi": 2.24,
+                "alphaowi": 2.7,
+                "alphaWall": 25 * 10.5, # 25 * Ao
+                "withInnerwalls": True}
+
+#%%
+def testCase1(timesteps, times_per_hour=60, n=4):
+    
+    timesteps_day = int(24 * times_per_hour)
     
     withInnerwalls = True
-    R1i = 0.000595515
-    C1i = 1.48362e7/3600
+    R1i = 0.000595693407511
+    C1i = 14836354.6282
     Ai = 75.5
-    alphaiwi = 2.236423594
+    alphaiwi = 2.24
     epsi = 1
-    alphaRad = np.zeros(timesteps)+5    
+    alphaRad = np.zeros(timesteps) + 5    
 
     withWindows = False
-    RWin = 0
+    RWin = 0.00000001
     splitfac = 0.09
     Aw = np.zeros(n)
     A_win_tot = 0
@@ -28,16 +83,17 @@ def testCase1(timesteps, n=4):
     g = 1
     
     withOuterwalls = True
-    RRest = 0.042768721
-    R1o = 0.004367913
-    C1o = 1.6008e6/3600
+    RRest = 0.03895919557
+    R1o = 0.00436791293674
+    C1o = 1600848.94
     Ao = 10.5
-    alphaowi = 2.699999358
+    alphaowi = 2.7
     epso = 1
+    alphaWall = 25 * Ao
     
     Vair = 52.5
     rhoair = 1.19
-    cair = 1007/3600    
+    cair = 0
     
     Tv = np.zeros(timesteps) + 295.15 # in K
     ventRate = np.zeros(timesteps)
@@ -46,18 +102,21 @@ def testCase1(timesteps, n=4):
     source_igRad = np.zeros(timesteps)
     
     Q = {}
-    Q["ig"] = np.zeros(timesteps)
-    for q in xrange(6,18):
-        Q["ig"][q] = 1e3
+    Q["ig"] = np.zeros(timesteps_day)
+    for q in range(int(6*timesteps_day/24), int(18*timesteps_day/24)):
+        Q["ig"][q] = 1000
+    Q["ig"] = np.tile(Q["ig"], 60)
         
-    equalAirTemp = np.zeros(timesteps)+295.15 # all temperatures in K
+    equalAirTemp = np.zeros(timesteps) + 295.15 # all temperatures in K
+    
+    (T_air1, T_air10, T_air60) = load_res("inputs/case1_res.csv")
     
     return   (R1i, C1i, Ai, RRest, R1o, C1o, Ao, RWin, Aw, A_win_tot,
-             alphaiwi, epsi, alphaowi, epso, alphaRad,
+             alphaiwi, epsi, alphaowi, epso, alphaWall, alphaRad,
              Tv, ventRate, solarRad_in, Vair, rhoair, cair,
              source_igRad, Q["ig"], equalAirTemp,
              withInnerwalls, withWindows, withOuterwalls,
-             splitfac, epsw, g)
+             splitfac, epsw, g, T_air1[:,0], T_air10[:,0], T_air60[:,0])
              
 #%%
 def testCase2(houseData, n, timesteps, model, testcase):
