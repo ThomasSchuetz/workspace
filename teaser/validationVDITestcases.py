@@ -31,8 +31,9 @@ def get_house_data(case=1):
                 "RRest": 0.03895919557, 
                 "R1o": 0.00436791293674, 
                 "C1o": 1600848.94,
-                "Ao": 10.5, 
+                "Ao": [10.5], 
                 "Aw": np.zeros(1), 
+                "At": np.zeros(1), 
                 "Vair": 52.5, 
                 "rhoair": 1.19, 
                 "cair": 0,
@@ -40,7 +41,7 @@ def get_house_data(case=1):
                 "g": 1,
                 "alphaiwi": 2.24,
                 "alphaowi": 2.7,
-                "alphaWall": 25 * 10.5, # 25 * Ao
+                "alphaWall": 25 * 10.5, # 25 * sum(Ao)
                 "withInnerwalls": True}
     elif case in (3,4):
         return {"R1i": 0.003237138, 
@@ -49,8 +50,9 @@ def get_house_data(case=1):
                 "RRest": 0.039330865, 
                 "R1o": 0.00404935160802, 
                 "C1o": 47900,
-                "Ao": 10.5, 
+                "Ao": [10.5], 
                 "Aw": np.zeros(1), 
+                "At": np.zeros(1), 
                 "Vair": 52.5, 
                 "rhoair": 1.19, 
                 "cair": 0,
@@ -58,7 +60,64 @@ def get_house_data(case=1):
                 "g": 1,
                 "alphaiwi": 2.24,
                 "alphaowi": 2.7,
-                "alphaWall": 25 * 10.5, # 25 * Ao
+                "alphaWall": 25 * 10.5, # 25 * sum(Ao)
+                "withInnerwalls": True}
+    elif case in (5,):
+        return {"R1i": 0.000595693407511, 
+                "C1i": 14836354.6282, 
+                "Ai": 75.5, 
+                "RRest": 0.03895919557, 
+                "R1o": 0.00436791293674, 
+                "C1o": 1600848.94,
+                "Ao": [10.5], 
+                "Aw": np.zeros(1), 
+                "At": [7], 
+                "Vair": 52.5, 
+                "rhoair": 1.19, 
+                "cair": 0,
+                "splitfac": 0.09,
+                "g": 1,
+                "alphaiwi": 2.24,
+                "alphaowi": 2.7,
+                "alphaWall": 25 * 10.5, # 25 * sum(Ao)
+                "withInnerwalls": True}
+    elif case in (6,):
+        return {"R1i": 0.000595515, 
+                "C1i": 14836200, 
+                "Ai": 75.5, 
+                "RRest": 0.038959197, 
+                "R1o": 0.004367913, 
+                "C1o": 1600800,
+                "Ao": [10.5], 
+                "Aw": np.zeros(1), 
+                "At": [0], 
+                "Vair": 52.5, 
+                "rhoair": 1.19, 
+                "cair": 0,
+                "splitfac": 0.09,
+                "g": 1,
+                "alphaiwi": 2.24,
+                "alphaowi": 2.7,
+                "alphaWall": 25 * 10.5, # 25 * sum(Ao)
+                "withInnerwalls": True}
+    elif case in (7,):
+        return {"R1i": 0.000595693407511, 
+                "C1i": 14836354.6282, 
+                "Ai": 75.5, 
+                "RRest": 0.03895919557, 
+                "R1o": 0.00436791293674, 
+                "C1o": 1600848.94,
+                "Ao": [10.5], 
+                "Aw": np.zeros(1), 
+                "At": [0], 
+                "Vair": 52.5, 
+                "rhoair": 1.19, 
+                "cair": 0,
+                "splitfac": 0.09,
+                "g": 1,
+                "alphaiwi": 2.24,
+                "alphaowi": 2.7,
+                "alphaWall": 25 * 10.5, # 25 * sum(Ao)
                 "withInnerwalls": True}
 
 #%%

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Created on Tue Aug 09 17:31:24 2016
+Created on Tue Aug 09 17:06:58 2016
 
 @author: tsz
 """
@@ -21,22 +21,34 @@ timesteps_day = int(24 * times_per_hour)
 
 # Zero inputs    
 ventRate = np.zeros(timesteps)
-solarRad_in = np.zeros((timesteps,1))
-Q_ig = np.zeros(timesteps)
 
 # Constant inputs
 alphaRad = np.zeros(timesteps) + 5
-equalAirTemp = np.zeros(timesteps) + 295.15 # all temperatures in K
-weatherTemperature = np.zeros(timesteps) + 295.15 # in K
 
 # Variable inputs
+Q_ig = np.zeros(timesteps_day)
 source_igRad = np.zeros(timesteps_day)
-for q in range(int(6*timesteps_day/24), int(18*timesteps_day/24)):
-    source_igRad[q] = 1000
+for q in range(int(7*timesteps_day/24), int(17*timesteps_day/24)):
+    Q_ig[q] = 200 + 80
+    source_igRad[q] = 80
+Q_ig = np.tile(Q_ig, 60)
 source_igRad = np.tile(source_igRad, 60)
 
+solarRad_raw = np.loadtxt("inputs/case05_q_sol.csv", usecols=(1,))
+solarRad = solarRad_raw[0:24]
+solarRad[solarRad > 100] = solarRad[solarRad > 100] * 0.15
+solarRad_adj = np.repeat(solarRad, times_per_hour)
+solarRad_in = np.array([np.tile(solarRad_adj, 60)]).T
+
+t_outside_raw = np.loadtxt("inputs/case05_t_amb.csv", delimiter=",")
+t_outside = ([t_outside_raw[2*i,1] for i in range(24)])
+t_outside_adj = np.repeat(t_outside, times_per_hour)
+weatherTemperature = np.tile(t_outside_adj, 60)
+
+equalAirTemp = weatherTemperature
+
 # Load constant house parameters
-houseData = tc.get_house_data(case=1)
+houseData = tc.get_house_data(case=5)
 
 krad = 1
 
@@ -62,7 +74,7 @@ T_air_10 = T_air_mean[216:240]
 T_air_60 = T_air_mean[1416:1440]
 
 # Load reference results    
-(T_air_ref_1, T_air_ref_10, T_air_ref_60) = tc.load_res("inputs/case02_res.csv")
+(T_air_ref_1, T_air_ref_10, T_air_ref_60) = tc.load_res("inputs/case05_res.csv")
 T_air_ref_1 = T_air_ref_1[:,0]
 T_air_ref_10 = T_air_ref_10[:,0]
 T_air_ref_60 = T_air_ref_60[:,0]

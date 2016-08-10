@@ -10,8 +10,74 @@ from __future__ import division
 
 import numpy as np
 
+def _to_hourly(vals,ts=60):
+    val = np.array([np.mean(vals[i*ts:(i+1)*ts]) for i in range(24)])
+    
+    return val
+
+#%%
+def _calc_splitfactors(cols, A_array, A_ext, A_win):
+    """
+    This is a direct translation from RC --> BaseClasses --> splitFacVal
+    
+    Parameters
+    ----------
+    cols : int
+        Number of orientations
+    A_array : list
+        [ATotExt, ATotWin]
+    A_ext : list
+        Vector of exterior wall areas
+    A_win : list
+        Vector of window areas
+    
+    Example
+    -------
+    >>> # Define areas
+    >>> A_ext = [10.5]
+    >>> A_win = [0]
+    >>> A_int = 75.5
+    >>> A_ar = [sum(A_ext), sum(A_win), A_int]
+    >>> # Calculate split factors for inner walls and outside walls
+    >>> splitFac_IW = _calc_splitfactors(dim, 1, A_ar, [0], [0])
+    >>> splitFac_OW = _calc_splitfactors(dim, len(A_ext, A_ar, A_ext, A_win)
+    """
+    
+    A_tot = sum(A_array) # total area
+
+    rows = sum([1 if A > 0 else 0 for A in A_array])
+
+    # Counters
+    i = 0 # A_array
+    j = 0 # Row
+    k = 0 # Column
+
+    result = np.zeros((rows, cols))    
+    
+    for A in A_array:
+        if A > 0:
+            k = 0
+            if i == 0:
+                for A_wall in A_ext:
+                    result[j,k] = (A - A_wall) / (A_tot - A_wall - A_win[k])
+                    k += 1
+            elif i == 1:
+                for A_wall in A_ext:
+                    result[j,k] = (A - A_win[k]) / (A_tot - A_wall - A_win[k])
+                    k += 1
+            else:
+                for A_wall in A_ext:
+                    result[j,k] = A / (A_tot - A_wall - A_win[k])
+                    k += 1
+            j += 1
+        i += 1
+    
+    return result
+
+#%%
 def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTemp, alphaRad, ventRate,
-                         Q_ig, source_igRad, krad, t_set_heating, t_set_cooling, dt=3600,
+                         Q_ig, source_igRad, krad, 
+                         t_set_heating, t_set_cooling, heater_limit, cooler_limit, dt=3600,
                          T_air_init=295.15, T_iw_init=295.15, T_ow_init=295.15):
     """
     Compute indoor air temperature and necessary (convective) heat gains from
@@ -37,8 +103,8 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
             Heat resistance outer walls in K/W
         - C1o : Float
             Capacity of outer walls in ``Wh/K``
-        - Ao : Float
-            Surface area of outer walls in m2
+        - Ao : List of Floats
+            Surface areas of outer walls in each direction in m2
         - Aw : List of Floats
             Window areas in each direction in m2
         - Vair : Float
@@ -57,8 +123,8 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
             Outer wall's coefficient of heat transfer (inner side) in W/m2K
     weatherTemperature : List of Float
         Environment temperatures in K
-    solarRad_in : List of Float
-        Solar radiation input (weighted with window areas) in W/m2
+    solarRad_in : 2d-array (float)
+        Solar radiation input on each external area in W/m2
     equalAirTemp : List of Float
         Equal air temperature based on VDI in K
     alphaRad : List of Float
@@ -115,6 +181,7 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     C1o             = houseData["C1o"] # Capacity 1 outer wall in Wh/K
     Ao              = houseData["Ao"] # Outer wall area
     Aw              = houseData["Aw"] # Window area
+    At              = houseData["At"] # Transmitting area
     
     Vair            = houseData["Vair"]     # Volume of the air in the zone
     rhoair          = houseData["rhoair"]   # Density of the air
@@ -128,41 +195,62 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     alphaWall       = houseData["alphaWall"] # Heat transfer between exterior wall and eq. air temp.
     
     A_win_tot = sum(Aw)
+    Ao_tot = sum(Ao)
+    A_ar = [Ao_tot, A_win_tot, Ai]
 
     # Adjust RRest to incorporate alphaWall
     RRest = RRest + 1/alphaWall
 
 #%% Time variable inputs
-    # convective heat entry from solar iradiation   
-    Q_solar_conv = solarRad_in * splitfac * g * A_win_tot
+    # convective heat entry from solar iradiation
+    e_solar_conv = np.zeros((timesteps, len(At)))
+    for i in range(len(At)):
+        e_solar_conv[:,i] = solarRad_in[:,i] * splitfac * g * At[i]
+    Q_solar_conv = np.sum(e_solar_conv, axis=1)
     
     # splitters:
     # on each splitter: one output goes to outer wall, one goes to inner wall
-    # therefor dimension is 2 if inner walls exist => 2 outgoing signals
-    
+    # therefore dimension is 2 if inner walls exist => 2 outgoing signals
+    splitFacSolar = _calc_splitfactors(len(Ao), A_ar, Ao, Aw)
     # therm. splitter solar radiative:
-    Q_solar_rad = solarRad_in * (splitfac - 1) * g * A_win_tot
+    e_solar_rad = np.zeros((timesteps, len(At)))
+    for i in range(len(At)):
+        e_solar_rad[:,i] = solarRad_in[:,i] * (splitfac - 1) * g * At[i]
+    Q_solar_rad = np.zeros((timesteps, len(Ao), splitFacSolar.shape[0]))
+    for i in range(len(Ao)):
+        for j in range(splitFacSolar.shape[0]):
+            Q_solar_rad[:,i,j] = -e_solar_rad[:,i] * splitFacSolar[j,i]
+    
+    Q_solarRadToInnerWall = np.sum(Q_solar_rad[:,:,1], axis=1)
+    Q_solarRadToOuterWalli = np.sum(Q_solar_rad[:,:,0], axis=1)
     
     # therm. splitter loads radiative:
-    Q_loads_rad = - krad * source_igRad
+    Q_loads_rad = krad * source_igRad
+    splitFacLoads = _calc_splitfactors(1, A_ar, [0], [0])
+    
+    Q_loadsToInnerWall = Q_loads_rad * splitFacLoads[1,0]
+    Q_loadsToOuterWalli = Q_loads_rad * splitFacLoads[0,0]
 
     # each splitter goes into inner (if true) and outer walls
     # split heat transfer according to area ratio
-    if withInnerwalls:
-        dim = 2
-        splitFacSolar = [(Ao - A_win_tot) / (Ao + Ai - A_win_tot), Ai/(Ao + Ai - A_win_tot)]
-        splitFacLoads = [Ao / (Ao + Ai), Ai / (Ao + Ai)]
-        Q_solarRadToInnerWall = -splitFacSolar[-dim+1] * Q_solar_rad
-        Q_loadsToInnerWall    = -splitFacLoads[-dim+1] * Q_loads_rad
-    else:
-        dim = 1
-        splitFacSolar = [(Ao - A_win_tot) / (Ao + Ai - A_win_tot)]
-        splitFacLoads = [Ao / (Ao + Ai)]
-        Q_solarRadToInnerWall = 0
-        Q_loadsToInnerWall    = 0
-        
-    Q_solarRadToOuterWalli = -splitFacSolar[-dim] * Q_solar_rad
-    Q_loadsToOuterWalli    = -splitFacLoads[-dim] * Q_loads_rad
+    
+    
+#    if withInnerwalls:
+#        dim = 2
+##        splitFacSolar = [(Ao - A_win_tot) / (Ao + Ai - A_win_tot), Ai/(Ao + Ai - A_win_tot)]
+#        splitFacSolar = [0,1]
+#        splitFacLoads = [Ao / (Ao + Ai), Ai / (Ao + Ai)]
+#        Q_solarRadToInnerWall = -splitFacSolar[-dim+1] * Q_solar_rad
+#        Q_loadsToInnerWall    = -splitFacLoads[-dim+1] * Q_loads_rad
+#    else:
+#        dim = 1
+#        splitFacSolar = [(Ao - A_win_tot) / (Ao + Ai - A_win_tot)]
+#        splitFacLoads = [Ao / (Ao + Ai)]
+#        Q_solarRadToInnerWall = 0
+#        Q_loadsToInnerWall    = 0
+#        
+#    Q_solarRadToOuterWalli = -splitFacSolar[-dim] * Q_solar_rad
+#    Q_loadsToOuterWalli    = -splitFacLoads[-dim] * Q_loads_rad
     
 #%% Define system of linear equations: 
     # A * x = rhs
@@ -183,6 +271,9 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     T_air_prev = T_air_init
 
     for t in range(timesteps):
+        if t == 60*6:
+            pass
+        
         # Common equations
         A = np.zeros((7,7))
         rhs = np.zeros(A.shape[0])
@@ -191,18 +282,18 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
         A[0,0] = C1o / dt + 1 / RRest + 1 / R1o
         A[0,1] = -1 / R1o
         A[1,0] = 1 / R1o
-        A[1,1] = -Ao * (alphaRad[t] + alphaowi) - 1 / R1o
-        A[1,3] = Ao * alphaRad[t]
-        A[1,4] = Ao * alphaowi
+        A[1,1] = -min(Ao_tot, Ai) * alphaRad[t] - Ao_tot * alphaowi - 1 / R1o
+        A[1,3] = min(Ao_tot, Ai) * alphaRad[t]
+        A[1,4] = Ao_tot * alphaowi
         A[2,2] = C1i / dt + 1 / R1i
         A[2,3] = -1 / R1i
-        A[3,1] = Ao * alphaRad[t]
+        A[3,1] = min(Ao_tot, Ai) * alphaRad[t]
         A[3,2] = 1 / R1i
-        A[3,3] = -Ao * alphaRad[t] - Ai * alphaiwi - 1 / R1i
+        A[3,3] = -min(Ao_tot, Ai) * alphaRad[t] - Ai * alphaiwi - 1 / R1i
         A[3,4] = Ai * alphaiwi
-        A[4,1] = Ao * alphaowi
+        A[4,1] = Ao_tot * alphaowi
         A[4,3] = Ai * alphaiwi
-        A[4,4] = -Ao * alphaowi - Ai * alphaiwi - ventRate[t] * Vair * cair * rhoair
+        A[4,4] = -Ao_tot * alphaowi - Ai * alphaiwi - ventRate[t] * Vair * cair * rhoair
         A[4,5] = -1
         A[4,6] = 1
         A[5,4] = Vair * cair * rhoair / dt
@@ -217,7 +308,8 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
         rhs[5] = rhoair * cair * Vair * T_air_prev / dt
         
         # Calculate current time step
-        x = _calc_timestep(A, rhs, t_set_heating[t], t_set_cooling[t])
+        x = _calc_timestep(A, rhs, t_set_heating[t], t_set_cooling[t], 
+                           heater_limit[t], cooler_limit[t])
 
         # Retrieve results
         T_ow.append(x[0])
@@ -236,7 +328,8 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     return (np.array(T_air), np.array(Q_HC))
 
 #%%
-def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15):
+def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
+                   heater_limit=1e10, cooler_limit=-1e10):
     """
     Calculate the temperatures and heat flow rate for the current time step.
     
@@ -258,10 +351,18 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15):
     
     if x_noHeat[4] < t_set_heating:
         # Indoor air temperature below heating set temperature
-        return _calc_heatflow(A, rhs, t_air_set=t_set_heating)
+        x_heating = _calc_heatflow(A, rhs, t_air_set=t_set_heating)
+        if x_heating[6] > heater_limit:
+            return _calc_temperatue(A, rhs, q_hc_fix=heater_limit)
+        else:
+            return x_heating
     elif x_noHeat[4] > t_set_cooling:
         # Indoor air temperature above cooling set temperature
-        return _calc_heatflow(A, rhs, t_air_set=t_set_cooling)
+        x_cooling = _calc_heatflow(A, rhs, t_air_set=t_set_cooling)
+        if x_cooling[6] < cooler_limit:
+            return _calc_temperatue(A, rhs, q_hc_fix=cooler_limit)
+        else:
+            return x_cooling
     else:
         # Indoor air temperature between both set temperature -> no further 
         # action required
