@@ -293,7 +293,7 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
         A[3,4] = Ai * alphaiwi
         A[4,1] = Ao_tot * alphaowi
         A[4,3] = Ai * alphaiwi
-        A[4,4] = -Ao_tot * alphaowi - Ai * alphaiwi - ventRate[t] * Vair * cair * rhoair
+        A[4,4] = -Ao_tot * alphaowi - Ai * alphaiwi - ventRate[t] * cair * rhoair
         A[4,5] = -1
         A[4,6] = 1
         A[5,4] = Vair * cair * rhoair / dt
@@ -304,7 +304,7 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
         rhs[1] = -Q_solarRadToOuterWalli[t] - Q_loadsToOuterWalli[t]
         rhs[2] = C1i * T_iw_prev / dt
         rhs[3] = -Q_solarRadToInnerWall[t] - Q_loadsToInnerWall[t]
-        rhs[4] = -ventRate[t] * Vair * cair * rhoair * weatherTemperature[t] - Q_solar_conv[t] - Q_ig[t]
+        rhs[4] = -ventRate[t] * cair * rhoair * weatherTemperature[t] - Q_solar_conv[t] - Q_ig[t]
         rhs[5] = rhoair * cair * Vair * T_air_prev / dt
         
         # Calculate current time step

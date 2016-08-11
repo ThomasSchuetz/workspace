@@ -62,7 +62,7 @@ def get_house_data(case=1):
                 "alphaowi": 2.7,
                 "alphaWall": 25 * 10.5, # 25 * sum(Ao)
                 "withInnerwalls": True}
-    elif case in (5,):
+    elif case in (5,12):
         return {"R1i": 0.000595693407511, 
                 "C1i": 14836354.6282, 
                 "Ai": 75.5, 
@@ -72,9 +72,9 @@ def get_house_data(case=1):
                 "Ao": [10.5], 
                 "Aw": np.zeros(1), 
                 "At": [7], 
-                "Vair": 52.5, 
+                "Vair": 0, 
                 "rhoair": 1.19, 
-                "cair": 0,
+                "cair": 1007,
                 "splitfac": 0.09,
                 "g": 1,
                 "alphaiwi": 2.24,
