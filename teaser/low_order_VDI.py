@@ -40,7 +40,7 @@ def _calc_splitfactors(cols, A_array, A_ext, A_win):
     >>> A_ar = [sum(A_ext), sum(A_win), A_int]
     >>> # Calculate split factors for inner walls and outside walls
     >>> splitFac_IW = _calc_splitfactors(dim, 1, A_ar, [0], [0])
-    >>> splitFac_OW = _calc_splitfactors(dim, len(A_ext, A_ar, A_ext, A_win)
+    >>> splitFac_OW = _calc_splitfactors(dim, len(A_ext), A_ar, A_ext, A_win)
     """
     
     A_tot = sum(A_array) # total area
