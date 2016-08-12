@@ -1,0 +1,148 @@
+\begin{huge}
+\textbf{Matrix structure}
+\end{huge}
+\vspace{\spacing}
+\\
+\begin{equation}
+\vec{T}_{ow} = 
+\begin{pmatrix} 
+	\dfrac{1}{R_{Rest}} + \dfrac{C_{1o}}{\Delta t} + \dfrac{1}{R_{1o}} \\
+	\dfrac{1}{R_{1o}} \\
+	0 \\
+	0 \\
+	0 \\
+	0 \\
+\end{pmatrix}
+\end{equation}
+
+\begin{equation}
+\vec{T}_{owi} = 
+\begin{pmatrix} 
+	-\dfrac{1}{R_{1o}} \\
+	-\min\left\lbrace A_o;A_i \right\rbrace \cdot \alpha_{Rad}(t)-A_o \cdot \alpha_{owi} - \dfrac{1}{R_{1o}} \\
+	0 \\
+	\min\left\lbrace A_o;A_i \right\rbrace \cdot \alpha_{Rad}(t) \\
+	0 \\
+	0 \\
+\end{pmatrix}
+\end{equation}
+
+\begin{equation}
+\vec{T}_{iw} = 
+\begin{pmatrix} 
+	0 \\
+	0 \\
+	\dfrac{C_{1i}}{\Delta t} + \dfrac{1}{R_{1i}} \\
+	\dfrac{1}{R_{1i}} \\
+	0 \\
+	0 \\
+\end{pmatrix}
+\end{equation}
+
+\begin{equation}
+\vec{T}_{iwi} = 
+\begin{pmatrix} 
+	0 \\
+	\min\left\lbrace A_o;A_i \right\rbrace \cdot \alpha_{Rad}(t) \\
+	0 \\
+	-\min\left\lbrace A_o;A_i \right\rbrace \cdot \alpha_{Rad}(t) - A_i \cdot \alpha_{iwi} - \dfrac{1}{R_{1i}} \\
+	A_i \cdot \alpha_{iwi} \\
+	0 \\
+\end{pmatrix}
+\end{equation}
+
+\begin{equation}
+\vec{T}_{air} = 
+\begin{pmatrix} 
+	0 \\
+	A_o \cdot \alpha_{owi} \\
+	0 \\
+	A_i \cdot \alpha_{iwi} \\
+	-A_o \cdot \alpha_{owi} - A_i \cdot \alpha_{iwi} - \dot{V}_{rate}(t) \cdot \rho_{air} \cdot c_{air}\\
+	\dfrac{\rho_{air} \cdot c_{air} \cdot V_{air}}{\Delta t} \\
+\end{pmatrix}
+\end{equation}
+
+\begin{equation}
+\vec{\dot{Q}}_{air} = 
+\begin{pmatrix} 
+	0 \\
+	0 \\
+	0 \\
+	0 \\
+	-1 \\
+	-1 \\
+\end{pmatrix}
+\end{equation}
+
+\begin{equation}
+\vec{\dot{Q}}_{airHC} = 
+\begin{pmatrix} 
+	0 \\
+	0 \\
+	0 \\
+	0 \\
+	1 \\
+	0 \\
+\end{pmatrix}
+\end{equation}
+
+\begin{equation}
+\vec{\dot{Q}}_{iwHC} = 
+\begin{pmatrix} 
+	0 \\
+	0 \\
+	0 \\
+	1 \\
+	0 \\
+	0 \\
+\end{pmatrix}
+\end{equation}
+
+\begin{equation}
+\vec{\dot{Q}}_{owHC} = 
+\begin{pmatrix} 
+	0 \\
+	1 \\
+	0 \\
+	0 \\
+	0 \\
+	0 \\
+\end{pmatrix}
+\end{equation}
+
+Right hand side:
+\begin{equation}
+\vec{b} = 
+\begin{pmatrix} 
+	\dfrac{C_{1o}}{\Delta t} \cdot T_{ow}(t-1) + \dfrac{T_{eq,air}(t)}{R_{Rest}} \\
+	-\dot{Q}_{SolRadOWI}(t) - \dot{Q}_{LoadOWI}(t) \\
+	\dfrac{C_{1i}}{\Delta t} \cdot T_{iw}(t-1) \\
+	-\dot{Q}_{SolRadIWI}(t) - \dot{Q}_{LoadIWI}(t) \\
+	-\dot{V}_{rate}(t) \cdot \rho_{air} \cdot c_{air} \cdot T_{env}(t) -\dot{Q}_{SolConv}(t) - \dot{Q}_{igConv}(t) \\
+	\dfrac{\rho_{air} \cdot c_{air} \cdot V_{air}}{\Delta t} \cdot T_{air}(t-1) \\
+\end{pmatrix}
+\end{equation}
+
+Resulting system:
+\begin{equation}
+\left( 
+\vec{T}_{ow}, \vec{T}_{owi}, \vec{T}_{iw}, \vec{T}_{iwi}, \vec{T}_{air}, \vec{\dot{Q}}_{air}, \vec{\dot{Q}}_{airHC}, \vec{\dot{Q}}_{iwHC}, \vec{\dot{Q}}_{owHC}
+\right) \cdot \vec{x} = \vec{b}
+\end{equation}
+
+\textbf{Note:}
+$\vec{x}$ has 9 entries, but only 6 equations are written down.
+In the case that a free-float temperature is computed, the following three equations are added:
+\begin{align}
+\dot{Q}_{airHC} &= 0\\
+\dot{Q}_{iwHC} &= 0\\
+\dot{Q}_{owHC} &= 0
+\end{align}
+
+If the convective heat flow rate affecting the air node for a fixed set temperature as well as fixed heat flows affecting IW and OW is computed, the following three equations are used:
+\begin{align}
+T_{air} &= T_{set}\\
+\dot{Q}_{iwHC} &= \dot{Q}_{iwHC}^{fix}\\
+\dot{Q}_{owHC} &= \dot{Q}_{owHC}^{fix}
+\end{align}

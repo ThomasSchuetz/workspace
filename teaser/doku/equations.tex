@@ -1,0 +1,53 @@
+\begin{huge}
+\textbf{Equations}
+\end{huge}
+\vspace{\spacing}
+\\
+Capacity external wall
+\begin{equation}
+\dfrac{C_{1o}}{\Delta t}\cdot \left( T_{ow}(t) - T_{ow}(t-1) \right) = \dfrac{T_{eq,air}(t) - T_{ow}(t)}{R_{Rest}} + \dfrac{T_{owi}(t) - T_{ow}(t)}{R_{1o}}
+\end{equation}
+\vspace{\spacing}
+\\
+Energy balance inner side of external wall
+\begin{equation}
+\begin{split}
+\dot{Q}_{SolRadOWI}(t) +\dot{Q}_{LoadOWI}(t) 
+-\min\left\lbrace A_o;A_i \right\rbrace \cdot \alpha_{Rad}(t) \cdot \left(T_{owi}(t) - T_{iwi}(t)\right)\\
++A_o \cdot \alpha_{owi} \cdot \left(T_{air}(t) - T_{owi}(t)\right) 
++\dfrac{T_{ow}(t) - T_{owi}(t)}{R_{1o}} + \dot{Q}_{iwHC}(t) = 0
+\end{split}
+\end{equation}
+\vspace{\spacing}
+\\
+Capacity inner wall
+\begin{equation}
+\dfrac{C_{1i}}{\Delta t}\cdot \left( T_{iw}(t) - T_{iw}(t-1) \right) = \dfrac{T_{iwi}(t) - T_{iw}(t)}{R_{1o}}
+\end{equation}
+\vspace{\spacing}
+\\
+Energy balance inner side of inner wall
+\begin{equation}
+\begin{split}
+\dot{Q}_{SolRadIWI}(t) +\dot{Q}_{LoadIWI}(t)
++\min\left\lbrace A_o;A_i \right\rbrace \cdot \alpha_{Rad}(t) \cdot \left(T_{owi}(t) - T_{iwi}(t)\right)\\
++A_i \cdot \alpha_{iwi}\cdot \left( T_{air}(t) - T_{iwi}(t) \right)
++\dfrac{T_{iw}(t) - T_{iwi}(t)}{R_{1i}} + \dot{Q}_{owHC}(t) = 0
+\end{split}
+\end{equation}
+\vspace{\spacing}
+\\
+Energy balance air mass
+\begin{equation}
+\begin{split}
+\dot{Q}_{air}(t) = -A_o \cdot \alpha_{owi} \cdot \left( T_{air}(t) - T_{owi}(t) \right) - A_i \cdot \alpha_{iwi} \cdot \left( T_{air}(t) - T_{iwi}(t) \right)\\
++ \dot{V}_{rate}(t) \cdot \rho_{air} \cdot c_{air} \cdot \left( T_{env}(t) - T_{air}(t) \right)\\
++ \dot{Q}_{SolConv}(t) + \dot{Q}_{igConv}(t) + \dot{Q}_{airHC}(t)
+\end{split}
+\end{equation}
+\vspace{\spacing}
+\\
+Capacity of air mass
+\begin{equation}
+\dot{Q}_{air}(t) = \dfrac{\rho_{air} \cdot c_{air} \cdot V_{air}}{\Delta t} \cdot \left( T_{air}(t) - T_{air}(t-1) \right)
+\end{equation}
