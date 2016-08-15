@@ -191,7 +191,8 @@ def load_file(filename, devs, clustered):
         res["objval"] = pkl.load(fin)
         res["runtime"] = pkl.load(fin)
         res["gap"] = pkl.load(fin)
-    
+    print res["z"]
+    exit()
     return evaluate(res, devs, clustered)
 
 filenames = ["chp_with_kwkg.pkl", "chp_without_kwkg.pkl", "eeg_with_restrictions.pkl",

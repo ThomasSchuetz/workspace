@@ -252,8 +252,8 @@ bars_boi = ax.bar(index+0*width, cap_boi_moo, width, color="#b30000", label="BOI
 bars_chp = ax.bar(index+1*width, cap_chp_moo, width, color="#e34a33", label="CHP")
 bars_eh = ax.bar(index+2*width, cap_eh_moo, width, color="#fc8d59", label="EH")
 bars_hp = ax.bar(index+3*width, cap_hp_moo, width, color="#fdd49e", label="HP")
-bars_stc = ax2.bar(index+4*width, cap_stc_moo, width, color="#2171b5", label="STC", hatch="//")
-bars_pv = ax2.bar(index+5*width, cap_pv_moo, width, color="#ABD9E9", label="PV", hatch="/")
+bars_pv = ax2.bar(index+4*width, cap_pv_moo, width, color="#2171b5", label="PV", hatch="/")
+bars_stc = ax2.bar(index+5*width, cap_stc_moo, width, color="#ABD9E9", label="STC", hatch="//")
 
 ax.set_ylabel("Installed heating power in kW", fontsize=14)
 ax2.set_ylabel("Covered roof area in m$^2$", fontsize=14)
@@ -275,8 +275,8 @@ ax.set_position([box.x0, box.y0+0.1,
 ax2.set_position([box.x0, box.y0+0.1,
                  box.width, box.height * 0.75])
 
-plt.legend((bars_boi, bars_chp, bars_eh, bars_hp, bars_stc, bars_pv), 
-           ("BOI", "CHP", "EH", "HP", "STC", "PV"),
+plt.legend((bars_boi, bars_chp, bars_eh, bars_hp, bars_pv, bars_stc), 
+           ("BOI", "CHP", "EH", "HP", "PV", "STC"),
            numpoints=1, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
            ncol=3, mode="expand", borderaxespad=0.)
 
@@ -302,8 +302,8 @@ bars_boi = ax.bar(index+0*width, cap_boi_moo, width, color="#b30000", label="BOI
 bars_chp = ax.bar(index+1*width, cap_chp_moo, width, color="#e34a33", label="CHP")
 bars_eh = ax.bar(index+2*width, cap_eh_moo, width, color="#fc8d59", label="EH")
 bars_hp = ax.bar(index+3*width, cap_hp_moo, width, color="#fdd49e", label="HP")
-bars_stc = ax2.bar(index+4*width, cap_stc_moo, width, color="#2171b5", label="STC", hatch="//")
-bars_pv = ax2.bar(index+5*width, cap_pv_moo, width, color="#ABD9E9", label="PV", hatch="/")
+bars_pv = ax2.bar(index+4*width, cap_pv_moo, width, color="#2171b5", label="PV", hatch="/")
+bars_stc = ax2.bar(index+5*width, cap_stc_moo, width, color="#ABD9E9", label="STC", hatch="//")
 
 ax.set_ylabel("Installed heating power in kW", fontsize=14)
 ax2.set_ylabel("Covered roof area in m$^2$", fontsize=14)
@@ -321,8 +321,8 @@ ax.set_position([box.x0, box.y0+0.1,
 ax2.set_position([box.x0, box.y0+0.1,
                  box.width, box.height * 0.75])
 
-plt.legend((bars_boi, bars_chp, bars_eh, bars_hp, bars_stc, bars_pv), 
-           ("BOI", "CHP", "EH", "HP", "STC", "PV"),
+plt.legend((bars_boi, bars_chp, bars_eh, bars_hp, bars_pv, bars_stc),
+           ("BOI", "CHP", "EH", "HP", "PV", "STC"),
            numpoints=1, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
            ncol=3, mode="expand", borderaxespad=0.)
 
