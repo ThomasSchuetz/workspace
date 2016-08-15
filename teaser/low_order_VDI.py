@@ -253,7 +253,8 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     T_air_prev = T_air_init
 
     for t in range(timesteps):
-        if t == 400:
+        print t
+        if t == 360:
             pass
         
         # Common equations
@@ -341,21 +342,21 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
         # Indoor air temperature below heating set temperature
     
         # Use primary heater
-        if np.argmax(heater_order==1) == 0:
+        if np.argmax(heater_order==1) == 0 and heater_limit[0] > 0:
             x_heating_1 = _calc_heatflow(A, rhs, t_air_set=t_set_heating, 
                                        q_air_fix=None, q_iw_fix=0, q_ow_fix=0)
             if x_heating_1[6] > heater_limit[0]:
                 x_maxheat_1 = _calc_temperatue(A, rhs, q_air_fix=heater_limit[0], q_iw_fix=0, q_ow_fix=0)
                 
                 if x_maxheat_1[4] < t_set_heating:
-                    if np.argmax(heater_order==2) == 1:
+                    if np.argmax(heater_order==2) == 1 and heater_limit[1] > 0:
                         x_heating_2 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=heater_limit[0], q_iw_fix=None, q_ow_fix=0)
                         
                         if x_heating_2[7] > heater_limit[1]:
                             x_maxheat_2 = _calc_temperatue(A, rhs, q_air_fix=heater_limit[0], q_iw_fix=heater_limit[1], q_ow_fix=0)
                             
-                            if x_maxheat_2[4] < t_set_heating:
+                            if x_maxheat_2[4] < t_set_heating and heater_limit[2] > 0:
                                 x_heating_3 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=heater_limit[0], q_iw_fix=heater_limit[1], q_ow_fix=None)
                                 
@@ -367,14 +368,14 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxheat_2
                         else:
                             return x_heating_2
-                    elif np.argmax(heater_order==2) == 2:
+                    elif np.argmax(heater_order==2) == 2 and heater_limit[2] > 0:
                         x_heating_2 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=heater_limit[0], q_iw_fix=0, q_ow_fix=None)
                         
                         if x_heating_2[8] > heater_limit[2]:
                             x_maxheat_2 = _calc_temperatue(A, rhs, q_air_fix=heater_limit[0], q_iw_fix=0, q_ow_fix=heater_limit[2])
                             
-                            if x_maxheat_2[4] < t_set_heating:
+                            if x_maxheat_2[4] < t_set_heating and heater_limit[1] > 0:
                                 x_heating_3 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=heater_limit[0], q_iw_fix=None, q_ow_fix=heater_limit[2])
                                 
@@ -386,26 +387,26 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxheat_2
                         else:
                             return x_heating_2
-                else:
-                    return x_maxheat_1
+                    else:
+                        return x_maxheat_1
             else:
                 return x_heating_1
         
-        elif np.argmax(heater_order==1) == 1:
+        elif np.argmax(heater_order==1) == 1 and heater_limit[1] > 0:
             x_heating_1 = _calc_heatflow(A, rhs, t_air_set=t_set_heating, 
                                        q_air_fix=0, q_iw_fix=None, q_ow_fix=0)
             if x_heating_1[7] > heater_limit[1]:
                 x_maxheat_1 = _calc_temperatue(A, rhs, q_air_fix=0, q_iw_fix=heater_limit[1], q_ow_fix=0)
                 
                 if x_maxheat_1[4] < t_set_heating:
-                    if np.argmax(heater_order==2) == 0:
+                    if np.argmax(heater_order==2) == 0 and heater_limit[0] > 0:
                         x_heating_2 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=None, q_iw_fix=heater_limit[1], q_ow_fix=0)
                         
                         if x_heating_2[6] > heater_limit[0]:
                             x_maxheat_2 = _calc_temperatue(A, rhs, q_air_fix=heater_limit[0], q_iw_fix=heater_limit[1], q_ow_fix=0)
                             
-                            if x_maxheat_2[4] < t_set_heating:
+                            if x_maxheat_2[4] < t_set_heating and heater_limit[2] > 0:
                                 x_heating_3 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=heater_limit[0], q_iw_fix=heater_limit[1], q_ow_fix=None)
                                 
@@ -417,14 +418,14 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxheat_2
                         else:
                             return x_heating_2
-                    elif np.argmax(heater_order==2) == 2:
+                    elif np.argmax(heater_order==2) == 2 and heater_limit[2] > 0:
                         x_heating_2 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=0, q_iw_fix=heater_limit[1], q_ow_fix=None)
                         
                         if x_heating_2[8] > heater_limit[2]:
                             x_maxheat_2 = _calc_temperatue(A, rhs, q_air_fix=0, q_iw_fix=heater_limit[1], q_ow_fix=heater_limit[2])
                             
-                            if x_maxheat_2[4] < t_set_heating:
+                            if x_maxheat_2[4] < t_set_heating and heater_limit[0] > 0:
                                 x_heating_3 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=None, q_iw_fix=heater_limit[1], q_ow_fix=heater_limit[2])
                                 
@@ -436,25 +437,25 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxheat_2
                         else:
                             return x_heating_2
-                else:
-                    return x_maxheat_1
+                    else:
+                        return x_maxheat_1
             else:
                 return x_heating_1
-        elif np.argmax(heater_order==1) == 2: # no else
+        elif np.argmax(heater_order==1) == 2 and heater_limit[2] > 0: # no else
             x_heating_1 = _calc_heatflow(A, rhs, t_air_set=t_set_heating, 
                                        q_air_fix=0, q_iw_fix=0, q_ow_fix=None)
             if x_heating_1[8] > heater_limit[2]:
                 x_maxheat_1 = _calc_temperatue(A, rhs, q_air_fix=0, q_iw_fix=0, q_ow_fix=heater_limit[2])
                 
                 if x_maxheat_1[4] < t_set_heating:
-                    if np.argmax(heater_order==2) == 0:
+                    if np.argmax(heater_order==2) == 0 and heater_limit[0] > 0:
                         x_heating_2 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=None, q_iw_fix=0, q_ow_fix=heater_limit[2])
                         
                         if x_heating_2[6] > heater_limit[0]:
                             x_maxheat_2 = _calc_temperatue(A, rhs, q_air_fix=heater_limit[0], q_iw_fix=0, q_ow_fix=heater_limit[1])
                             
-                            if x_maxheat_2[4] < t_set_heating:
+                            if x_maxheat_2[4] < t_set_heating and heater_limit[1] > 0:
                                 x_heating_3 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=heater_limit[0], q_iw_fix=None, q_ow_fix=heater_limit[2])
                                 
@@ -466,14 +467,14 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxheat_2
                         else:
                             return x_heating_2
-                    elif np.argmax(heater_order==2) == 1:
+                    elif np.argmax(heater_order==2) == 1 and heater_limit[1] > 0:
                         x_heating_2 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=0, q_iw_fix=None, q_ow_fix=heater_limit[2])
                         
                         if x_heating_2[7] > heater_limit[1]:
                             x_maxheat_2 = _calc_temperatue(A, rhs, q_air_fix=0, q_iw_fix=heater_limit[1], q_ow_fix=heater_limit[2])
                             
-                            if x_maxheat_2[4] < t_set_heating:
+                            if x_maxheat_2[4] < t_set_heating and heater_limit[0] > 0:
                                 x_heating_3 = _calc_heatflow(A, rhs, t_air_set=t_set_heating,
                                                      q_air_fix=None, q_iw_fix=heater_limit[1], q_ow_fix=heater_limit[2])
                                 
@@ -485,28 +486,28 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxheat_2
                         else:
                             return x_heating_2
-                else:
-                    return x_maxheat_1
+                    else:
+                        return x_maxheat_1
             else:
                 return x_heating_1
 
     elif x_noHeat[4] > t_set_cooling:
         # Indoor air temperature above cooling set temperature
     
-        if np.argmax(cooler_order==1) == 0:
+        if np.argmax(cooler_order==1) == 0 and cooler_limit[0] < 0:
             x_cooling_1 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling, q_air_fix=None, q_iw_fix=0, q_ow_fix=0)
             if x_cooling_1[6] < cooler_limit[0]:
                 x_maxcool_1 = _calc_temperatue(A, rhs, q_air_fix=cooler_limit[0], q_iw_fix=0, q_ow_fix=0)
                 
                 if x_maxcool_1[4] > t_set_cooling:
-                    if np.argmax(cooler_order==2) == 1:
+                    if np.argmax(cooler_order==2) == 1 and cooler_limit[1] < 0:
                         x_cooling_2 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                      q_air_fix=cooler_limit[0], q_iw_fix=None, q_ow_fix=0)
                         
                         if x_cooling_2[7] < cooler_limit[1]:
                             x_maxcool_2 = _calc_temperatue(A, rhs, q_air_fix=cooler_limit[0], q_iw_fix=cooler_limit[1], q_ow_fix=0)
                             
-                            if x_maxcool_2[4] > t_set_cooling:
+                            if x_maxcool_2[4] > t_set_cooling and cooler_limit[2] < 0:
                                 x_cooling_3 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                      q_air_fix=cooler_limit[0], q_iw_fix=cooler_limit[1], q_ow_fix=None)
                                 
@@ -518,14 +519,14 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxcool_2
                         else:
                             return x_cooling_2
-                    elif np.argmax(cooler_order==2) == 2:
+                    elif np.argmax(cooler_order==2) == 2 and cooler_limit[2] < 0:
                         x_cooling_2 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                      q_air_fix=cooler_limit[0], q_iw_fix=0, q_ow_fix=None)
                         
                         if x_cooling_2[8] < cooler_limit[2]:
                             x_maxcool_2 = _calc_temperatue(A, rhs, q_air_fix=cooler_limit[0], q_iw_fix=0, q_ow_fix=cooler_limit[2])
                             
-                            if x_maxcool_2[4] > t_set_cooling:
+                            if x_maxcool_2[4] > t_set_cooling and cooler_limit[1] < 0:
                                 x_cooling_3 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                      q_air_fix=cooler_limit[0], q_iw_fix=None, q_ow_fix=cooler_limit[2])
                                 
@@ -537,24 +538,24 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxcool_2
                         else:
                             return x_cooling_2
-                else:
-                    return x_maxcool_1
+                    else:
+                        return x_maxcool_1
             else:
                 return x_cooling_1
-        elif np.argmax(cooler_order==1) == 1:
+        elif np.argmax(cooler_order==1) == 1 and cooler_limit[1] < 0:
             x_cooling_1 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling, q_air_fix=0, q_iw_fix=None, q_ow_fix=0)
             if x_cooling_1[7] < cooler_limit[1]:
                 x_maxcool_1 = _calc_temperatue(A, rhs, q_air_fix=0, q_iw_fix=cooler_limit[1], q_ow_fix=0)
                 
                 if x_maxcool_1[4] > t_set_cooling:
-                    if np.argmax(cooler_order==2) == 0:
+                    if np.argmax(cooler_order==2) == 0 and cooler_limit[0] < 0:
                         x_cooling_2 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                      q_air_fix=None, q_iw_fix=cooler_limit[1], q_ow_fix=0)
                         
                         if x_cooling_2[6] < cooler_limit[0]:
                             x_maxcool_2 = _calc_temperatue(A, rhs, q_air_fix=cooler_limit[0], q_iw_fix=cooler_limit[1], q_ow_fix=0)
                             
-                            if x_maxcool_2[4] > t_set_cooling:
+                            if x_maxcool_2[4] > t_set_cooling and cooler_limit[2] < 0:
                                 x_cooling_3 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                              q_air_fix=cooler_limit[0], q_iw_fix=cooler_limit[1], q_ow_fix=None)
                                 
@@ -566,14 +567,14 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxcool_2
                         else:
                             return x_cooling_2
-                    elif np.argmax(cooler_order==2) == 2:
+                    elif np.argmax(cooler_order==2) == 2 and cooler_limit[2] < 0:
                         x_cooling_2 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                      q_air_fix=0, q_iw_fix=cooler_limit[1], q_ow_fix=None)
                         
                         if x_cooling_2[8] < cooler_limit[2]:
                             x_maxcool_2 = _calc_temperatue(A, rhs, q_air_fix=0, q_iw_fix=cooler_limit[1], q_ow_fix=cooler_limit[2])
                             
-                            if x_maxcool_2[4] > t_set_cooling:
+                            if x_maxcool_2[4] > t_set_cooling and cooler_limit[0] < 0:
                                 x_cooling_3 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                              q_air_fix=None, q_iw_fix=cooler_limit[1], q_ow_fix=cooler_limit[2])
                                 
@@ -585,25 +586,25 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxcool_2
                         else:
                             return x_cooling_2
-                else:
-                    return x_maxcool_1
+                    else:
+                        return x_maxcool_1
             else:
                 return x_cooling_1
         
-        elif np.argmax(cooler_order==1) == 2:
+        elif np.argmax(cooler_order==1) == 2 and cooler_limit[2] < 0:
             x_cooling_1 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling, q_air_fix=0, q_iw_fix=0, q_ow_fix=None)
             if x_cooling_1[8] < cooler_limit[2]:
                 x_maxcool_1 = _calc_temperatue(A, rhs, q_air_fix=0, q_iw_fix=0, q_ow_fix=cooler_limit[2])
                 
                 if x_maxcool_1[4] > t_set_cooling:
-                    if np.argmax(cooler_order==2) == 0:
+                    if np.argmax(cooler_order==2) == 0 and cooler_limit[0] < 0:
                         x_cooling_2 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                      q_air_fix=None, q_iw_fix=0, q_ow_fix=cooler_limit[2])
                         
                         if x_cooling_2[6] < cooler_limit[0]:
                             x_maxcool_2 = _calc_temperatue(A, rhs, q_air_fix=cooler_limit[0], q_iw_fix=0, q_ow_fix=cooler_limit[2])
                             
-                            if x_maxcool_2[4] > t_set_cooling:
+                            if x_maxcool_2[4] > t_set_cooling and cooler_limit[1] < 0:
                                 x_cooling_3 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                              q_air_fix=cooler_limit[0], q_iw_fix=None, q_ow_fix=cooler_limit[2])
                                 
@@ -615,14 +616,14 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxcool_2
                         else:
                             return x_cooling_2
-                    elif np.argmax(cooler_order==2) == 1:
+                    elif np.argmax(cooler_order==2) == 1 and cooler_limit[1] < 0:
                         x_cooling_2 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                      q_air_fix=0, q_iw_fix=None, q_ow_fix=cooler_limit[2])
                         
                         if x_cooling_2[7] < cooler_limit[1]:
                             x_maxcool_2 = _calc_temperatue(A, rhs, q_air_fix=0, q_iw_fix=cooler_limit[1], q_ow_fix=cooler_limit[2])
                             
-                            if x_maxcool_2[4] > t_set_cooling:
+                            if x_maxcool_2[4] > t_set_cooling and cooler_limit[0] < 0:
                                 x_cooling_3 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling,
                                                              q_air_fix=None, q_iw_fix=cooler_limit[1], q_ow_fix=cooler_limit[2])
                                 
@@ -634,8 +635,8 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                                 return x_maxcool_2
                         else:
                             return x_cooling_2
-                else:
-                    return x_maxcool_1
+                    else:
+                        return x_maxcool_1
             else:
                 return x_cooling_1
 
