@@ -56,13 +56,14 @@ krad = 1
 t_set_heating = np.zeros(timesteps)        # in Kelvin
 t_set_cooling = np.zeros(timesteps) + 600  # in Kelvin
 
-heater_limit = np.zeros(timesteps) + 1e10
-cooler_limit = np.zeros(timesteps) - 1e10
+heater_limit = np.zeros((timesteps,3)) + 1e10
+cooler_limit = np.zeros((timesteps,3)) - 1e10
 
 # Calculate indoor air temperature
-T_air, Q_hc = low_order_VDI.reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in,
+T_air, Q_hc, Q_iw, Q_ow = low_order_VDI.reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in,
                                    equalAirTemp, alphaRad, ventRate, Q_ig, source_igRad, krad,
                                    t_set_heating, t_set_cooling, heater_limit, cooler_limit,
+                                   heater_order=np.array([1,2,3]), cooler_order=np.array([1,2,3]),
                                    dt=int(3600/times_per_hour))
 
 # Compute averaged results

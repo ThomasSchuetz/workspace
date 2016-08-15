@@ -157,6 +157,25 @@ def get_house_data(case=1):
                 "alphaowi": 2.398,
                 "alphaWall": 28 * 9.75, # 28 * sum(Ao)
                 "withInnerwalls": True}
+    elif case in (11,):
+        return {"R1i": 0.000595693407511, 
+                "C1i": 14836354.6282, 
+                "Ai": 75.5, 
+                "RRest": 0.03895919557, 
+                "R1o": 0.00436791293674, 
+                "C1o": 1600848.94,
+                "Ao": [10.5], 
+                "Aw": np.zeros(1), 
+                "At": [0], 
+                "Vair": 0, 
+                "rhoair": 1.19, 
+                "cair": 1007,
+                "splitfac": 0.09,
+                "g": 1,
+                "alphaiwi": 3,
+                "alphaowi": 2.7,
+                "alphaWall": 25 * 10.5, # 25 * sum(Ao)
+                "withInnerwalls": True}
 
 #%%
 def get_eqAirTemp_params(case=8):
