@@ -11,16 +11,26 @@ import numpy as np
 
 def equal_air_temp(HSol, TBlaSky, TDryBul, sunblind, params):
     """
+    Inputs:
+    HSol - solar radiation per unit area
+    TBlaSky - black-body sky temperature
+    TDryBul - dry bulb temperature
+    sunblind - opening factor of sunblinds for each direction (0 = open to 1 = closed)
+    params - misc. constant input parameters
+    ----------------------------------------
+    Outputs:
+    TEqAir - equivalent air temperature
+    
     """
     # Read parameters to improve readability in the equations
-    eExt = params["eExt"]
-    aExt = params["aExt"]
+    eExt = params["eExt"] # coefficient of emission of exterior walls (outdoor)
+    aExt = params["aExt"] # coefficient of absorption of exterior walls (outdoor)
     alphaRadWall = params["alpha_rad_wall"]
     alphaWallOut = params["alpha_wall_out"]
-    wfWall = params["wfWall"]
-    wfWin = params["wfWin"]
-    wfGro = params["wfGro"]
-    TGro = params["T_Gro"]
+    wfWall = params["wfWall"] # weight factors of the walls
+    wfWin = params["wfWin"] # weight factors of the windows
+    wfGro = params["wfGro"] # weight factor of the ground (0 if not considered)
+    TGro = params["T_Gro"] # 
     n = len(wfWall)
     
     # Compute equivalent long wave and short wave temperatures

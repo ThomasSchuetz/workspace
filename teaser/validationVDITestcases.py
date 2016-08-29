@@ -249,7 +249,7 @@ def testCase1(timesteps, times_per_hour=60, n=4):
         
     equalAirTemp = np.zeros(timesteps) + 295.15 # all temperatures in K
     
-    (T_air1, T_air10, T_air60) = load_res("inputs/case1_res.csv")
+    (T_air1, T_air10, T_air60) = load_res("inputs/case01_res.csv")
     
     return   (R1i, C1i, Ai, RRest, R1o, C1o, Ao, RWin, Aw, A_win_tot,
              alphaiwi, epsi, alphaowi, epso, alphaWall, alphaRad,
