@@ -123,7 +123,7 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
         solar_radiation["eConvSol"][:,i] = gWin*ratioWinConRad*ATransparent[i] * solRad[:,i]
     solar_radiation["sumSolRad"] = np.sum(solar_radiation["eConvSol"], axis=1)
     solar_radiation["convHeatSol"] = -solar_radiation["sumSolRad"]
-    Q_solarConv = solar_radiation["convHeatSol"]
+    Q_solarConv = -solar_radiation["convHeatSol"]
 
     # radiative heat entry from solar radiation
     # split radiation onto exterior walls, interior walls (and windows)
@@ -138,9 +138,9 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
         for j in range(splitFacSolar.shape[0]):
             solar_radiation["thermSplit"][:,i,j] = solar_radiation["radHeatSol"] * splitFacSolar[j,i]
     
-    Q_solarRadExt = np.sum(solar_radiation["thermSplit"][:,:,0], axis=1)
-    Q_solarRadInt = np.sum(solar_radiation["thermSplit"][:,:,1], axis=1)
-    Q_solarRadWin = np.sum(solar_radiation["thermSplit"][:,:,2], axis=1)
+    Q_solarRadExt = -np.sum(solar_radiation["thermSplit"][:,:,0], axis=1)
+    Q_solarRadInt = -np.sum(solar_radiation["thermSplit"][:,:,1], axis=1)
+    Q_solarRadWin = -np.sum(solar_radiation["thermSplit"][:,:,2], axis=1)
     
 #%% internal gains
     # convective heat entry from internal gains
@@ -186,11 +186,12 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
             Tow[t]  = model.addVar(vtype="C", name="Tow_"+str(t),  lb=-100.)
             Tiw[t]  = model.addVar(vtype="C", name="Tiw_"+str(t),  lb=-100.)
         else:
-            Tair[0]   = model.getVarByName("Tair_0")
-#            if model.getVarByName("Tow_0") in model.getVars():
-            Tow[0]    = model.getVarByName("Tow_0")
-#            if model.getVarByName("Tiw_0") in model.getVars():
-            Tiw[0]    = model.getVarByName("Tiw_0")            
+            if model.getVarByName("Tair_0") in model.getVars():
+                Tair[0]   = model.getVarByName("Tair_0")
+            if model.getVarByName("Tow_0") in model.getVars():
+                Tow[0]    = model.getVarByName("Tow_0")
+            if model.getVarByName("Tiw_0") in model.getVars():
+                Tiw[0]    = model.getVarByName("Tiw_0")            
         
         Towi[t] = model.addVar(vtype="C", name="Towi_"+str(t), lb=-100.)
         Tiwi[t] = model.addVar(vtype="C", name="Tiwi_"+str(t), lb=-100.)
@@ -203,15 +204,16 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
     
 #%% add main contraints: balances
 #    testperiod = range(1,49)
-    for t in range(1,timesteps):
+    for t in range(timesteps):
         if ports["heaterCooler"]:
             pass
         else:
             model.addConstr(Q_HC[t] == 0, name="prevent_HC_"+str(t))
         
         # exterior wall
-        model.addConstr(CExt * (Tow[t]-Tow[t-1])/dt == (extWall[t]-Tow[t])/RExtRem - (Tow[t]-Towi[t])/RExt,
-                        name="exteriorWall_transfer_"+str(t))
+        if t > 0:
+            model.addConstr(CExt * (Tow[t]-Tow[t-1])/dt == (extWall[t]-Tow[t])/RExtRem - (Tow[t]-Towi[t])/RExt,
+                            name="exteriorWall_transfer_"+str(t))
         model.addConstr(Q_solarRadExt[t] + Q_igRadExt[t] - 
                         min(sum(AExt),AInt)*alphaRad[t]*(Towi[t]-Tiwi[t]) + 
                         sum(AExt)*alphaExt*(Tair[t]-Towi[t]) + 
@@ -221,8 +223,9 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
                         name="exteriorWall_balance_"+str(t))
         
         # interior wall
-        model.addConstr(CInt * (Tiw[t]-Tiw[t-1])/dt == (Tiwi[t]-Tiw[t])/RInt,
-                        name="interiorWall_transfer_"+str(t))
+        if t > 0:
+            model.addConstr(CInt * (Tiw[t]-Tiw[t-1])/dt == (Tiwi[t]-Tiw[t])/RInt,
+                            name="interiorWall_transfer_"+str(t))
         model.addConstr(Q_solarRadInt[t] + Q_igRadInt[t] +
                         min(sum(AExt),AInt)*alphaRad[t]*(Towi[t]-Tiwi[t]) + 
                         AInt*alphaInt*(Tair[t]-Tiwi[t]) + 
@@ -249,8 +252,9 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
                         name="air_mass_balance_"+str(t))
         
         # additional constraints
-        model.addConstr(Qair[t] == (Tair[t]-Tair[t-1])/dt * rhoair*cair*Vair,
-                        name="room_transfer_"+str(t))
+        if t > 0:
+            model.addConstr(Qair[t] == (Tair[t]-Tair[t-1])/dt * rhoair*cair*Vair,
+                            name="room_transfer_"+str(t))
         
         # bounds
     #    bounds = {}
@@ -308,11 +312,11 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
     res["QTSL2"]= {}
 
     for t in range(timesteps):
-        res["Tair"][t] = Tair[t].X
-        res["Tiwi"][t] = Tiwi[t].X
-        res["Towi"][t] = Towi[t].X
-        res["Tow"][t]  = Tow[t].X
-        res["Tiw"][t]  = Tiw[t].X
+        res["Tair"][t] = Tair[t].X -273.15
+        res["Tiwi"][t] = Tiwi[t].X -273.15
+        res["Towi"][t] = Towi[t].X -273.15
+        res["Tow"][t]  = Tow[t].X  -273.15
+        res["Tiw"][t]  = Tiw[t].X  -273.15
         
         res["Qair"][t] = Qair[t].X
         res["Qsrc"][t] = Q_solarConv[t]
@@ -336,7 +340,7 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
             res["Qiw"][t] = (Tiw[t].X-Tiw[t-1].X)*CInt/dt
 
 #%% return model with added variables/constraints
-    T_air = np.array([res["Tair"][key] for key in res["Tair"].keys()])
+    T_air = np.array([res["Tair"][key]+273.15 for key in res["Tair"].keys()])
     Q_hc = np.array([res["QHC"][key] for key in res["QHC"].keys()])
     Q_iw = np.array([res["Qiw"][key] for key in res["Qiw"].keys()])
     Q_ow = np.array([res["Qow"][key] for key in res["Qow"].keys()])
