@@ -200,7 +200,7 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
     
 #%% add main contraints: balances
 #    testperiod = range(1,49)
-    for t in range(1,timesteps+1):
+    for t in range(1,timesteps):
         if ports["heaterCooler"]:
             pass
         else:
@@ -227,12 +227,9 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
                         min(sum(AWin),AInt)*alphaRad[t]*(Twin[t]-Tiwi[t]) +
                         intWallIndoorSurface[t] == 0,
                         name="interiorWall_balance_"+str(t))
-                        
-        model.update()
-        model.write("lgs.lp")
         
         # window
-        model.addConstr(Q_solarRadWin[t] + Q_igRadWin +
+        model.addConstr(Q_solarRadWin[t] + Q_igRadWin[t] +
                         sum(AWin)*alphaWin*(Tair[t]-Twin[t]) +
                         (window[t]-Twin[t])/RWin-min(sum(AWin),sum(AExt))*alphaRad[t]*(Twin[t]-Towi[t]) -
                         min(sum(AWin),AInt)*alphaRad[t]*(Twin[t]-Tiwi[t]) +
@@ -244,7 +241,7 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
                         sum(AWin)*alphaWin*(Tair[t]-Twin[t]) -
                         sum(AExt)*alphaExt*(Tair[t]-Towi[t]) -
                         AInt*alphaInt*(Tair[t]-Tiwi[t]) +
-                        ventRate*rhoair*cair*(Tv[t]-Tair[t]) +
+                        ventRate[t] * rhoair * cair * (Tv[t]-Tair[t]) +
                         Q_HC[t],
                         name="air_mass_balance_"+str(t))
         
@@ -306,11 +303,11 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
     res["QTSL2"]= {}
 
     for t in range(timesteps):
-        res["Tair"][t] = Tair[t].X-273.15
-        res["Tiwi"][t] = Tiwi[t].X-273.15
-        res["Towi"][t] = Towi[t].X-273.15
-        res["Tow"][t]  = Tow[t].X-273.15
-        res["Tiw"][t]  = Tiw[t].X-273.15
+        res["Tair"][t] = Tair[t].X
+        res["Tiwi"][t] = Tiwi[t].X
+        res["Towi"][t] = Towi[t].X
+        res["Tow"][t]  = Tow[t].X
+        res["Tiw"][t]  = Tiw[t].X
         
         res["Qair"][t] = Qair[t].X
         res["Qsrc"][t] = Q_solarConv[t]
@@ -320,9 +317,9 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
         res["Qiwc"][t] = (Tair[t].X-Tiwi[t].X)*alphaInt*AInt
         res["QHT"][t]  = (Towi[t].X-Tiwi[t].X)*alphaRad[t]*sum(AExt)
         res["QHC"][t]  = Q_HC[t].X
-        res["Qv"][t]   = ventRate*rhoair*cair*Vair*(Tv[t]-Tair[t].X)
+        res["Qv"][t]   = ventRate[t]*rhoair*cair*Vair*(Tv[t]-Tair[t].X)
         res["Qig"][t]  = intGainsConv[t] + intGainsRad[t]
-        res["Teq"][t]  = extWall[t]-273.15
+        res["Teq"][t]  = extWall[t]
         
         res["QTSW1"][t]= Q_solarRadExt[t]
         res["QTSL1"][t]= Q_igRadExt[t]

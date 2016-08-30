@@ -108,10 +108,10 @@ def plot_result(res, ref, title="Results day 1"):
     plt.xlim([1,24])
     plt.xlabel("Time in h")
 
-plot_result(T_air_1, T_air_ref_1, "Results day 1")
+plot_result(T_air_1,  T_air_ref_1,  "Results day 1")
 plot_result(T_air_10, T_air_ref_10, "Results day 10")
 plot_result(T_air_60, T_air_ref_60, "Results day 60")
 
-print("Max. deviation day 1: " + str(np.max(np.abs(T_air_1 - T_air_ref_1))))
+print("Max. deviation day 1: "  + str(np.max(np.abs(T_air_1  - T_air_ref_1))))
 print("Max. deviation day 10: " + str(np.max(np.abs(T_air_10 - T_air_ref_10))))
 print("Max. deviation day 60: " + str(np.max(np.abs(T_air_60 - T_air_ref_60))))
