@@ -63,94 +63,121 @@ def get_house_data(timesteps, case=1):
                 "alphaWall": 25*10.5
                 }
     elif case in (3,4):
-        return {"withInnerwalls": True,
-                "R1i": 0.003237138,
-                "C1i": 7297100,
-                "Ai": 75.5,
-                "alphaiwi": 2.24,
-                "epsi": 1,
-
-                "withWindows": False,
-                "RWin": 0,
-                "splitfac": 0.09,
-                "Aw": np.zeros(1),
-                "epsw": 1,                
-                "g": 1,
+        return {# Thermal zone
+                "Vair": 0,
+                "alphaRad": np.zeros(timesteps)+5,
+                "nOrientations": 1,
+        
+                # Windows
+                "AWin": np.zeros(1),
+                "ATransparent": np.zeros(1),
+                "alphaWin": 2.7,
+                "RWin": 0.00000001,
+                "gWin": 1,
+                "ratioWinConRad": 0,
+                "indoorPortWin": False,
                 
-                "withOuterwalls": True,
-                "RRest": 0.039330865, 
-                "R1o": 0.00404935160802, 
-                "C1o": 47900,
-                "Ao": [10.5],
-                "alphaowi": 2.7,
-                "epso": 1,
+                # Exterior Walls
+                "AExt": np.array([10.5]),
+                "alphaExt": 2.7,
+                "nExt": 1,
+#                "RExt": np.array([0.00404935160802]),
+                "RExt": 0.00404935160802,
+                "RExtRem": 0.039330865,
+#                "CExt": np.array([47900]),
+                "CExt": 47900,
+                "indoorPortExtWalls": False,
                 
-                "At": np.zeros(1), 
-                "Vair": 52.5, 
-                "rhoair": 1.19, 
-                "cair": 1007,
-
-                "alphaWall": 25 * 10.5, # 25 * sum(Ao)
+                # Interior walls
+                "AInt": 75.5,
+                "alphaInt": 2.24,
+                "nInt": 1,
+#                "RInt": np.array([0.003237138]),
+                "RInt": 0.003237138,
+#                "CInt": np.array([7297100]),
+                "CInt": 7297100,
+                "indoorPortIntWalls": False,
+                
+                # theConWall
+                "alphaWall": 25*10.5
                 }
     elif case in (5,12):
-        return {"withInnerwalls": True,
-                "R1i": 0.000595693407511, 
-                "C1i": 14836354.6282,
-                "Ai": 75.5,
-                "alphaiwi": 2.24,
-                "epsi": 1,
+        return {# Thermal zone
+                "Vair": 0,
+                "alphaRad": np.zeros(timesteps)+5,
+                "nOrientations": 1,
+        
+                # Windows
+                "AWin": np.zeros(1),
+                "ATransparent": np.array([7]),
+                "alphaWin": 2.7,
+                "RWin": 0.00000001,
+                "gWin": 1,
+                "ratioWinConRad": 0.09,
+                "indoorPortWin": False,
                 
-                "withWindows": True,
-                "RWin": 0,
-                "splitfac": 0.09,
-                "Aw": [0,0,7,0,0],
-                "epsw": 1,                
-                "g": 1,
+                # Exterior Walls
+                "AExt": np.array([10.5]),
+                "alphaExt": 2.7,
+                "nExt": 1,
+#                "RExt": np.array([0.00436791293674]),
+                "RExt": 0.00436791293674,
+                "RExtRem": 0.03895919557,
+#                "CExt": np.array([1600848.94]),
+                "CExt": 1600848.94,
+                "indoorPortExtWalls": False,
                 
-                "withOuterwalls": True,
-                "RRest": 0.03895919557, 
-                "R1o": 0.00436791293674, 
-                "C1o": 1600848.94,
-                "Ao": [10.5],
-                "alphaowi": 2.7,
-                "epso": 1,
+                # Interior walls
+                "AInt": 75.5,
+                "alphaInt": 2.24,
+                "nInt": 1,
+#                "RInt": np.array([0.000595693407511]),
+                "RInt": 0.000595693407511,
+#                "CInt": np.array([14836354.6282]),
+                "CInt": 14836354.6282,
+                "indoorPortIntWalls": False,
                 
-                "At": [7], 
-                "Vair": 0, 
-                "rhoair": 1.19, 
-                "cair": 1007,
-
-                "alphaWall": 25 * 10.5, # 25 * sum(Ao)
+                # theConWall
+                "alphaWall": 25*10.5
                 }
     elif case in (6,):
-        return {"withInnerwalls": True,
-                "R1i": 0.000595515,
-                "C1i": 14836200,
-                "Ai": 75.5,
-                "alphaiwi": 2.24,
-                "epsi": 1,
+        return {# Thermal zone
+                "Vair": 0,
+                "alphaRad": np.zeros(timesteps)+5,
+                "nOrientations": 1,
+        
+                # Windows
+                "AWin": np.zeros(1),
+                "ATransparent": np.zeros(1),
+                "alphaWin": 2.7,
+                "RWin": 0.00000001,
+                "gWin": 1,
+                "ratioWinConRad": 0,
+                "indoorPortWin": False,
                 
-                "withWindows": False,
-                "RWin": 0,
-                "splitfac": 0.09,
-                "Aw": np.zeros(1),
-                "epsw": 0.95,
-                "g": 0.15,
+                # Exterior Walls
+                "AExt": np.array([10.5]),
+                "alphaExt": 2.7,
+                "nExt": 1,
+#                "RExt": np.array([0.004367913]),
+                "RExt": 0.004367913,
+                "RExtRem": 0.03895917,
+#                "CExt": np.array([1600800]),
+                "CExt": 1600800,
+                "indoorPortExtWalls": False,
                 
-                "withOuterwalls": True,
-                "RRest": 0.038959197, 
-                "R1o": 0.004367913, 
-                "C1o": 1600800,
-                "Ao": [10.5],
-                "alphaowi": 2.7,
-                "epso": 1,
+                # Interior walls
+                "AInt": 75.5,
+                "alphaInt": 2.24,
+                "nInt": 1,
+#                "RInt": np.array([0.000595515]),
+                "RInt": 0.000595515,
+#                "CInt": np.array([14836200]),
+                "CInt": 14836200,
+                "indoorPortIntWalls": False,
                 
-                "At": [0], 
-                "Vair": 52.5, 
-                "rhoair": 1.19, 
-                "cair": 1007,
-                
-                "alphaWall": 25 * 10.5, # 25 * sum(Ao)
+                # theConWall
+                "alphaWall": 25*10.5
                 }
     elif case in (7,):
         return {"R1i": 0.000595693407511, 

@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Created on Tue Aug 09 16:37:05 2016
+Created on Tue Aug 09 17:40:12 2016
 
 @author: tsz
 """
+
 from __future__ import division
 
 import numpy as np
@@ -14,7 +15,7 @@ import matplotlib.pyplot as plt
 import twoElements
 import testcases as tc
 
-model = gp.Model("tc1")
+model = gp.Model("tc4")
 
 # Definition of time horizon
 times_per_hour  = 5
@@ -22,10 +23,10 @@ timesteps       = 24 * 60 * times_per_hour # 60 days
 timesteps_day   = int(24 * times_per_hour)
 
 # Zero inputs    
-ventRate    = np.zeros(timesteps)
-solRad      = np.zeros((timesteps,1))
-intGainsRad = np.zeros(timesteps)
-window      = np.zeros(timesteps)
+ventRate     = np.zeros(timesteps)
+solRad       = np.zeros((timesteps,1))
+intGainsConv = np.zeros(timesteps)
+window       = np.zeros(timesteps)
 windowIndoorSurface     = np.zeros(timesteps)
 extWallIndoorSurface    = np.zeros(timesteps)
 intWallIndoorSurface    = np.zeros(timesteps)
@@ -38,20 +39,20 @@ Tv          = np.zeros(timesteps) + 295.15 # in K
 T_start = 273.15 + 22
 
 # Variable inputs
-intGainsConv = np.zeros(timesteps_day)
+intGainsRad = np.zeros(timesteps_day)
 for q in range(int(6*timesteps_day/24), int(18*timesteps_day/24)):
-    intGainsConv[q] = 1000
-intGainsConv = np.tile(intGainsConv, 60)
+    intGainsRad[q] = 1000
+intGainsRad = np.tile(intGainsRad, 60)
 
 # Load constant house parameters
-params = tc.get_house_data(timesteps, case=1)
+params = tc.get_house_data(timesteps, case=4)
 
 # Ventilation and air parameters
 ports = {}
 ports["Tv"] = Tv
 ports["ventRate"] = ventRate
 ports["rhoair"] = 1.19 # kg/m3
-ports["cair"] = 0 # Wh
+ports["cair"] = 1007/3600 # Wh
 ports["heaterCooler"] = False
 ports["setAirTemp"] = False
 
@@ -83,7 +84,7 @@ T_air_10 = T_air_mean[216:240]
 T_air_60 = T_air_mean[1416:1440]
 
 # Load reference results    
-(T_air_ref_1, T_air_ref_10, T_air_ref_60) = tc.load_res("inputs/case01_res.csv")
+(T_air_ref_1, T_air_ref_10, T_air_ref_60) = tc.load_res("inputs/case04_res.csv")
 T_air_ref_1 = T_air_ref_1[:,0]
 T_air_ref_10 = T_air_ref_10[:,0]
 T_air_ref_60 = T_air_ref_60[:,0]
@@ -108,10 +109,10 @@ def plot_result(res, ref, title="Results day 1"):
     plt.xlim([1,24])
     plt.xlabel("Time in h")
 
-plot_result(T_air_1,  T_air_ref_1,  "Results day 1")
+plot_result(T_air_1, T_air_ref_1, "Results day 1")
 plot_result(T_air_10, T_air_ref_10, "Results day 10")
 plot_result(T_air_60, T_air_ref_60, "Results day 60")
 
-print("Max. deviation day 1: "  + str(np.max(np.abs(T_air_1  - T_air_ref_1))))
+print("Max. deviation day 1: " + str(np.max(np.abs(T_air_1 - T_air_ref_1))))
 print("Max. deviation day 10: " + str(np.max(np.abs(T_air_10 - T_air_ref_10))))
 print("Max. deviation day 60: " + str(np.max(np.abs(T_air_60 - T_air_ref_60))))

@@ -8,14 +8,14 @@ Created on Tue Aug 02 11:59:46 2016
 from __future__ import division
 import numpy as np
 
-def sunblinds(houseData, solarBeforeSunblinds):
+def sunblinds(params, solarBeforeSunblinds):
     """ 
     Calculate solar input for reduced order model and for eqAirTemp through sunblinds
     """
-    n = len(houseData["gsunblind"]) # Number of orientations (without ground)
-    I_max = houseData["Imax"] # Intensity at which the sunblind closes
-    gsunblind = houseData["gsunblind"] # Total energy transmittances if sunblind is closed
-    Aw = houseData["Aw"] # Window area for each orientation
+    n           = len(params["gWin"]) # Number of orientations (without ground)
+    I_max       = params["Imax"] # Intensity at which the sunblind closes
+    gsunblind   = params["gWin"] # Total energy transmittances if sunblind is closed
+    Aw          = params["AWin"] # Window area for each orientation
     
     T = solarBeforeSunblinds.shape[1]
     sunblindsig = np.zeros((n,T))
@@ -34,12 +34,12 @@ def sunblinds(houseData, solarBeforeSunblinds):
 
 if __name__ == "__main__":
     houseData = {"Imax": 150, 
-                 "Aw": [1.56, 4.0, 7.64, 3.125, 12.6, 6.9],
-                 "gsunblind": [1.0, 0.8, 0.4, 0.3, 1.0]}
+                 "AWin": [1.56, 4.0, 7.64, 3.125, 12.6, 6.9],
+                 "gWin": [1.0, 0.8, 0.4, 0.3, 1.0]}
     
     np.random.seed(0)
     solarBeforeSunblinds = np.random.randint(low=0,
                                              high=1000,
-                                             size=(len(houseData["Aw"]), 8760))
+                                             size=(len(houseData["AWin"]), 8760))
     
     weighted_sum, sunblindsig = sunblinds(houseData, solarBeforeSunblinds)

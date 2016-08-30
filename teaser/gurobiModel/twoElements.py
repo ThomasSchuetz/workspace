@@ -94,7 +94,7 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
     nExt                = params["nExt"] # Number of RC-elements of exterior walls
     RExt                = params["RExt"] # Vector of resistances of exterior walls, from inside to outside
     RExtRem             = params["RExtRem"] # Resistance of remaining resistor RExtRem between capacity n and outside
-    CExt                = params["CExt"]/3600 # Vector of heat capacities of exterior walls, from inside to outside, in Wh/K
+    CExt                = params["CExt"] # Vector of heat capacities of exterior walls, from inside to outside, in Wh/K
     indoorPortExtWalls  = params["indoorPortExtWalls"]
     
     # Interior walls
@@ -102,13 +102,16 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
     alphaInt            = params["alphaInt"] # Convective coefficient of heat transfer of interior walls (indoor)
     nInt                = params["nInt"] # Number of RC-elements of interior walls
     RInt                = params["RInt"] # Vector of resistances of interior walls, from port to center
-    CInt                = params["CInt"]/3600 # Vector of heat capacities of interior walls, from port to center
+    CInt                = params["CInt"] # Vector of heat capacities of interior walls, from port to center
     indoorPortIntWalls  = params["indoorPortIntWalls"]
     
     rhoair              = ports["rhoair"] # in Kg/m3
     cair                = ports["cair"] # in Wh
     ventRate            = ports["ventRate"]
     Tv                  = ports["Tv"] # in K
+    
+    # adjust RExtRem to incorporate alphaWall
+    RExtRem             = RExtRem + 1/params["alphaWall"]
     
     timesteps           = len(alphaRad)
     
@@ -288,6 +291,8 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
     res["Tiw"]  = {}
     res["Qair"] = {}
     res["Qsrc"] = {}
+    res["Qiw"]  = {}
+    res["Qow"]  = {}
     res["Qiwi"] = {}
     res["Qowi"] = {}
     res["Qowc"] = {}
@@ -325,84 +330,15 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
         res["QTSL1"][t]= Q_igRadExt[t]
         res["QTSW2"][t]= Q_solarRadInt[t]
         res["QTSL2"][t]= Q_igRadInt[t]
+        
+        if t > 0:
+            res["Qow"][t] = (Tow[t].X-Tow[t-1].X)*CExt/dt
+            res["Qiw"][t] = (Tiw[t].X-Tiw[t-1].X)*CInt/dt
 
 #%% return model with added variables/constraints
-    return res["Tair"], res["QHC"], res["Qiwi"], res["Qowi"]
-
-def addConstraints(model, dt, testcase):
-#%% 
-    # get building parameters
-    filename = "TEASER4_meine_Geo.mo"
-    houseData = parser_buildings.parse_record(filename)
+    T_air = np.array([res["Tair"][key] for key in res["Tair"].keys()])
+    Q_hc = np.array([res["QHC"][key] for key in res["QHC"].keys()])
+    Q_iw = np.array([res["Qiw"][key] for key in res["Qiw"].keys()])
+    Q_ow = np.array([res["Qow"][key] for key in res["Qow"].keys()])
     
-    # get weather data
-    filename = "TRY2010_12_Jahr.dat"
-    raw_inputs = {}
- 
-    beta, gamma = weather.get_betaGamma(houseData["orientationswallshorizontal"])
-    (raw_inputs["solar_irrad_sky"],
-    raw_inputs["solar_irrad_earth"],
-    raw_inputs["temperature"], solarRad_in) = weather.get_weather(filename, beta, gamma)
-    
-    # calculate solar input for reducedOrderModel (ROM) and rad through sunblinds for equalAirTemp (EAT)
-    solarRad_in_redOrdMod, sunblindsig = sunblinds.sunblinds(houseData, solarRad_in, testcase)
-
-    # calculate equivalent air temperature on outer walls
-    equalAirTemp, alphaRad = eqAirTemp.eqAirTempVDI([raw_inputs["temperature"],
-                                          raw_inputs["solar_irrad_sky"],
-                                          raw_inputs["solar_irrad_earth"]],
-                                          houseData,
-                                          solarRad_in,
-                                          sunblindsig)
-    
-    model = reducedOrderModelVDI(houseData,
-                                 raw_inputs["temperature"],
-                                 solarRad_in_redOrdMod,
-                                 equalAirTemp,
-                                 alphaRad,
-                                 model,
-                                 testcase)
-                                     
-    return model, equalAirTemp
-
-def createUseCase(model):
-#%%    
-    Tair = {}
-    Tow  = {}
-    Tiw  = {}
-    Q_HC = {}
-    
-    Tair[0] = model.addVar(vtype="C", name="Tair_0", lb=-100.)
-    Tow[0]  = model.addVar(vtype="C", name="Tow_0",  lb=-100.)
-    Tiw[0]  = model.addVar(vtype="C", name="Tiw_0",  lb=-100.)
-    for i in xrange(8760):
-        Q_HC[i] = model.addVar(vtype="C", name="Q_HC_"+str(i), lb=-1e5)
-
-    model.update()
-
-    T0all = 295.15
-    model.addConstr(Tair[0] == 293.15,
-                    name="initial_Tair")
-    model.addConstr(Tow[0]  == T0all,
-                    name="initial_Tow")
-    model.addConstr(Tiw[0]  == T0all,
-                    name="initial_Tiw")
-    for i in xrange(8760):
-        model.addConstr(Q_HC[i] == 0,
-                        name="initial_HC_"+str(i))
-        
-    model.update()
-    
-    return model
-    
-#%%
-if __name__ == "__main__":
-    model = gp.Model("test")
-    
-    model = createUseCase(model)    
-    
-    dt = 1
-    model, temp = addConstraints(model, dt, testcase=True)
-    
-    import matplotlib.pyplot as plt
-    plt.plot(temp)
+    return T_air, Q_hc, Q_iw, Q_ow
