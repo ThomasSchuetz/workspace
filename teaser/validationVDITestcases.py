@@ -155,7 +155,7 @@ def get_house_data(case=1):
                 "g": 1,
                 "alphaiwi": 2.12,
                 "alphaowi": 2.398,
-                "alphaWall": 28 * 9.75, # 28 * sum(Ao)
+                "alphaWall": 28 * 9.75, # 9.75 * sum(Ao)
                 "withInnerwalls": True}
     elif case in (11,):
         return {"R1i": 0.000595693407511, 

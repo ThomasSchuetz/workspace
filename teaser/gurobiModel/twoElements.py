@@ -130,13 +130,13 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
     splitFacSolar = splitFacVal(len(AExt), [sum(AExt), sum(AWin), AInt], AExt, AWin)
     solar_radiation["eRadSol"] = np.zeros((timesteps, len(ATransparent)))
     for i in range(len(ATransparent)):
-        solar_radiation["eRadSol"] = gWin*(1-ratioWinConRad)*ATransparent[i] * solRad[:,i]
+        solar_radiation["eRadSol"][:,i] = gWin*(1-ratioWinConRad)*ATransparent[i] * solRad[:,i]
     solar_radiation["radHeatSol"] = -solar_radiation["eRadSol"]
 
     solar_radiation["thermSplit"] = np.zeros((timesteps, len(AExt), splitFacSolar.shape[0]))
     for i in range(len(AExt)):
         for j in range(splitFacSolar.shape[0]):
-            solar_radiation["thermSplit"][:,i,j] = solar_radiation["radHeatSol"] * splitFacSolar[j,i]
+            solar_radiation["thermSplit"][:,i,j] = solar_radiation["radHeatSol"][:,i] * splitFacSolar[j,i]
     
     Q_solarRadExt = -np.sum(solar_radiation["thermSplit"][:,:,0], axis=1)
     Q_solarRadInt = -np.sum(solar_radiation["thermSplit"][:,:,1], axis=1)
@@ -197,8 +197,11 @@ def twoElements(params, solRad, window, extWall, windowIndoorSurface, extWallInd
         Tiwi[t] = model.addVar(vtype="C", name="Tiwi_"+str(t), lb=-100.)
         Twin[t] = model.addVar(vtype="C", name="Twin_"+str(t), lb=-100.)
         
-        Qair[t]   = model.addVar(vtype="C", name="Qair_"+str(t), lb=-1e5)
-        Q_HC[t]   = model.addVar(vtype="C", name="Q_HC_"+str(t), lb=-1e5)
+        Qair[t] = model.addVar(vtype="C", name="Qair_"+str(t), lb=-1e5)
+        if ports["heaterCooler"]:
+            Q_HC[t] = model.getVarByName("Q_HC_"+str(t))
+        else:
+            Q_HC[t] = model.addVar(vtype="C", name="Q_HC_"+str(t), lb=-1e5)
     
     model.update()
     
