@@ -17,7 +17,7 @@ import testcases as tc
 model = gp.Model("tc7")
 
 # Definition of time horizon
-times_per_hour = 5
+times_per_hour = 15
 timesteps = 24 * 60 * times_per_hour # 60 days
 timesteps_day = int(24 * times_per_hour)
 
@@ -56,15 +56,15 @@ ports["heaterCooler"] = True
 ports["setAirTemp"] = True
 
 # Load initial values into the model
-Tair = {}
+Tair = {} # actual temperature
 Q_HC = {}
-Tpre = {}
+Tpre = {} # preset temperature
 dT   = {}
 for t in range(timesteps):
-    Tair[t] = model.addVar(vtype="C", name="Tair_"+str(t), lb=-100.)
-    Q_HC[t] = model.addVar(vtype="C", name="Q_HC_"+str(t), lb=-500., ub=500.)
-    Tpre[t] = model.addVar(vtype="C", name="Tpre_"+str(t), lb=-100.)
-    dT[t]   = model.addVar(vtype="C", name="dT_"+str(t))
+    Tair[t]   = model.addVar(vtype="C", name="Tair_"+str(t), lb=-100.)
+    Q_HC[t]   = model.addVar(vtype="C", name="Q_HC_"+str(t), lb=-500., ub=500.)
+    Tpre[t]   = model.addVar(vtype="C", name="Tpre_"+str(t), lb=-100.)
+    dT[t]     = model.addVar(vtype="C", name="dT_"+str(t), lb=0.)
 
 # preset temperature
 t_set = np.zeros(timesteps_day) + 273.15 + 22
@@ -72,21 +72,20 @@ for q in range(int(6*timesteps_day/24), int(18*timesteps_day/24)):
     t_set[q] = 273.15 + 27
 t_set = np.tile(t_set, 60)
 
-Tow  = model.addVar(vtype="C", name="Tow_0", lb=-100.)
-Tiw  = model.addVar(vtype="C", name="Tiw_0", lb=-100.)
+Tair_start = model.addVar(vtype="C", name="Tair_start", lb=-100.)
+Tow        = model.addVar(vtype="C", name="Tow_start", lb=-100.)
+Tiw        = model.addVar(vtype="C", name="Tiw_start", lb=-100.)
 model.update()
 
 for t in range(timesteps):
     model.addConstr(Tpre[t] == t_set[t])
-    model.addConstr(dT[t] >= Tair[t] - Tpre[t])
-    model.addConstr(dT[t] >= Tpre[t] - Tair[t])
-model.addConstr(Tair[0] == T_start)
-model.addConstr(Tow == T_start)
-model.addConstr(Tiw == T_start)
-#if t_set[0] == T_start:
-#    model.addConstr(Q_HC[0] == 0.)
+    model.addConstr(dT[t] >= Tair[t] - Tpre[t]) # Tair > Tpre
+    model.addConstr(dT[t] >= Tpre[t] - Tair[t]) # Tair < Tpre
+model.addConstr(Tair_start == T_start)
+model.addConstr(Tow        == T_start)
+model.addConstr(Tiw        == T_start)
 
-# objective: minimize temperature maximum deviation between preset and actual temperature
+# objective: minimize sum of temperature deviations between preset and actual temperature
 model.setObjective(sum(dT[t] for t in range(timesteps)),gp.GRB.MINIMIZE)
 model.update()
 

@@ -18,7 +18,7 @@ import eqAirTemp
 model = gp.Model("tc9")
 
 # Definition of time horizon
-times_per_hour = 5
+times_per_hour = 15
 timesteps = 24 * 60 * times_per_hour # 60 days
 timesteps_day = int(24 * times_per_hour)
 
@@ -87,9 +87,9 @@ ports["heaterCooler"] = False
 ports["setAirTemp"] = False
 
 # Load initial values into the model
-Tair = model.addVar(vtype="C", name="Tair_0", lb=-100.)
-Tow  = model.addVar(vtype="C", name="Tow_0", lb=-100.)
-Tiw  = model.addVar(vtype="C", name="Tiw_0", lb=-100.)
+Tair = model.addVar(vtype="C", name="Tair_start", lb=-100.)
+Tow  = model.addVar(vtype="C", name="Tow_start", lb=-100.)
+Tiw  = model.addVar(vtype="C", name="Tiw_start", lb=-100.)
 model.update()
 model.addConstr(Tair == T_start)
 model.addConstr(Tow == T_start)

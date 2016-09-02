@@ -17,7 +17,7 @@ import testcases as tc
 model = gp.Model("tc6")
 
 # Definition of time horizon
-times_per_hour = 10
+times_per_hour = 15
 timesteps = 24 * 60 * times_per_hour # 60 days
 timesteps_day = int(24 * times_per_hour)
 
@@ -58,29 +58,28 @@ ports["setAirTemp"] = True
 # Load initial values into the model
 Tair = {}
 Q_HC = {}
-#y    = {}
 z    = {}
 for t in range(timesteps):
     Tair[t] = model.addVar(vtype="C", name="Tair_"+str(t), lb=-100.)
     Q_HC[t] = model.addVar(vtype="C", name="Q_HC_"+str(t), lb=-1e5)
-#    y[t]    = model.addVar(vtype="B", name="y_"+str(t)) # =1 if abs(Q_HC[t] is positive)
     z[t]    = model.addVar(vtype="C", name="z_"+str(t))
 
 t_set = np.zeros(timesteps_day) + 273.15 + 22
 for q in range(int(6*timesteps_day/24), int(18*timesteps_day/24)):
     t_set[q] = 273.15 + 27
 t_set = np.tile(t_set, 60)
-
-Tow  = model.addVar(vtype="C", name="Tow_0", lb=-100.)
-Tiw  = model.addVar(vtype="C", name="Tiw_0", lb=-100.)
+Tair_start = model.addVar(vtype="C", name="Tair_start", lb=-100.)
+Tow        = model.addVar(vtype="C", name="Tow_start", lb=-100.)
+Tiw        = model.addVar(vtype="C", name="Tiw_start", lb=-100.)
 model.update()
 
 for t in range(timesteps):
     model.addConstr(Tair[t] == t_set[t])
     model.addConstr(z[t] >= Q_HC[t])
     model.addConstr(z[t] >= -Q_HC[t])
-model.addConstr(Tow == T_start)
-model.addConstr(Tiw == T_start)
+model.addConstr(Tair_start == T_start)
+model.addConstr(Tow        == T_start)
+model.addConstr(Tiw        == T_start)
 
 model.setObjective(sum(z[t] for t in range(timesteps)),gp.GRB.MINIMIZE)
 model.update()
