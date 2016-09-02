@@ -46,6 +46,7 @@ def _calc_splitfactors(cols, A_array, A_ext, A_win):
     A_tot = sum(A_array) # total area
 
     rows = sum([1 if A > 0 else 0 for A in A_array])
+    rows = len(A_array)
 
     # Counters
     i = 0 # A_array
@@ -77,7 +78,7 @@ def _calc_splitfactors(cols, A_array, A_ext, A_win):
 #%%
 def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTemp, alphaRad, ventRate,
                          Q_ig, source_igRad, krad, 
-                         t_set_heating, t_set_cooling, heater_limit, cooler_limit, 
+                         t_set_heating, t_set_cooling, heater_limit=[1e10, 1e10, 1e10], cooler_limit=[-1e10, -1e10, -1e10], 
                          heater_order=np.array([1,2,3]), cooler_order=np.array([1,2,3]), dt=3600,
                          T_air_init=295.15, T_iw_init=295.15, T_ow_init=295.15):
     """
@@ -751,7 +752,7 @@ if __name__ == "__main__":
     houseData = {"R1i":R1i, "C1i":C1i, "Ai":Ai, "RRest":RRest, "R1o":R1o, "C1o":C1o,
                  "Ao":Ao, "Aw":Aw, "Vair":Vair, "rhoair":rhoair, "cair":cair,
                  "splitfac":splitfac, "g":g, "alphaiwi":alphaiwi, "alphaowi":alphaowi,
-                 "alphaWall": alphaWall, "withInnerwalls":True}
+                 "alphaWall": alphaWall, "withInnerwalls":True, "At":Aw}
     
     weatherTemperature = Tv
     

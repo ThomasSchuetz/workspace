@@ -8,14 +8,16 @@ Created on Tue Aug 02 11:59:46 2016
 from __future__ import division
 import numpy as np
 
-def sunblinds(houseData, solarBeforeSunblinds):
+def sunblinds(params, solarBeforeSunblinds):
     """ 
     Calculate solar input for reduced order model and for eqAirTemp through sunblinds
+    Outputs:
+    sunblindsig - state of shading, reduction factor due to shading (0 if sunblinds are completely opened)
     """
-    n = len(houseData["gsunblind"]) # Number of orientations (without ground)
-    I_max = houseData["Imax"] # Intensity at which the sunblind closes
-    gsunblind = houseData["gsunblind"] # Total energy transmittances if sunblind is closed
-    Aw = houseData["Aw"] # Window area
+    n = len(params["gsunblind"]) # Number of orientations (without ground)
+    I_max = params["Imax"] # Intensity at which the sunblind closes
+    gsunblind = params["gsunblind"] # Total energy transmittances if sunblind is CLOSED
+    Aw = params["Aw"] # Window area
     
     T = solarBeforeSunblinds.shape[1]
     sunblindsig = np.zeros((n,T))

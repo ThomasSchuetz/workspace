@@ -8,10 +8,9 @@ Created on Fri Jul 22 10:20:57 2016
 
 from __future__ import division
 
-import math
 import parser_buildings
 import numpy as np
-import re
+#import re
 import gurobipy as gp
 import validationVDITestcases as valid
 
@@ -130,7 +129,7 @@ def eqAirTempVDI(weatherData, houseData, solarRad_in, sunblindsig):
             alpharad[t] = (E_sky[t]+(E_earth[t]/0.93))/(T_sky[t]-T_earth[t])        
         
         phiprivate = np.zeros(n)
-        phiprivate = unitvec*0.5 + np.cos(orientationswallshorizontal*(math.pi/180))*0.5
+        phiprivate = unitvec*0.5 + np.cos(orientationswallshorizontal*(np.pi/180))*0.5
         
         T_eqLW[:,t] = ((T_earth[t]-T_air[t])*(unitvec-phiprivate)+(T_sky[t]-T_air[t])*phiprivate)*(eowo*alpharad[t]/alphaowo)
         T_eqSW[:,t] = solarRad_in[:,t]*(aowo/alphaowo)

@@ -155,7 +155,7 @@ def get_house_data(case=1):
                 "g": 1,
                 "alphaiwi": 2.12,
                 "alphaowi": 2.398,
-                "alphaWall": 28 * 9.75, # 28 * sum(Ao)
+                "alphaWall": 28 * 9.75, # 9.75 * sum(Ao)
                 "withInnerwalls": True}
     elif case in (11,):
         return {"R1i": 0.000595693407511, 
@@ -249,7 +249,7 @@ def testCase1(timesteps, times_per_hour=60, n=4):
         
     equalAirTemp = np.zeros(timesteps) + 295.15 # all temperatures in K
     
-    (T_air1, T_air10, T_air60) = load_res("inputs/case1_res.csv")
+    (T_air1, T_air10, T_air60) = load_res("inputs/case01_res.csv")
     
     return   (R1i, C1i, Ai, RRest, R1o, C1o, Ao, RWin, Aw, A_win_tot,
              alphaiwi, epsi, alphaowi, epso, alphaWall, alphaRad,
