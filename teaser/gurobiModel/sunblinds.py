@@ -11,6 +11,24 @@ import numpy as np
 def sunblinds(params, solarBeforeSunblinds):
     """ 
     Calculate solar input for reduced order model and for eqAirTemp through sunblinds
+    
+    Arguments
+    ---------
+    params: dictionary
+            contains misc. input parameters
+            - gWin: array-like
+                    Total energy transmittances if sunblind is CLOSED
+            - Imax: int/float
+                    Intensity at which the sunblind closes
+            - AWin: array-like
+                    Window area for each orientation
+    solarBeforeSunblinds: numpy ndarray
+                          radiation before consideration of sunblinds
+    
+    Returns
+    -------
+    sunblindsig: array-like 
+                 state of shading, reduction factor due to shading (0 if sunblinds are completely opened)
     """
     n           = len(params["gWin"]) # Number of orientations (without ground)
     I_max       = params["Imax"] # Intensity at which the sunblind closes

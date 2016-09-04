@@ -123,42 +123,43 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
             Inner wall's coefficient of heat transfer (inner side) in W/m2K
         - alphaowi : Float
             Outer wall's coefficient of heat transfer (inner side) in W/m2K
-    weatherTemperature : List of Float
+    weatherTemperature: List of Float
         Environment temperatures in K
-    solarRad_in : 2d-array (float)
+    solarRad_in: 2d-array (float)
         Solar radiation input on each external area in W/m2
-    equalAirTemp : List of Float
+    equalAirTemp: List of Float
         Equal air temperature based on VDI in K
-    alphaRad : List of Float
+    alphaRad: List of Float
         Radiative heat transfer coef. between inner and outer walls in W/m2K
-    ventRate : List of Float
+    ventRate: List of Float
         Fresh air at temperature weatherTemperature in m3/s
-    Q_ig : List of Float
+    Q_ig: List of Float
         Internal convective gains in W
     source_igRad
-    krad
-    t_set_heating : List of Float
+    krad: Float
+        Devides internal gains into radiative and convective gains for a heat source
+    t_set_heating: List of Float
         Heating set temperatures. If the air temperature without heating drops
         below this temperature, a heating load that just fulfills this 
         temperature is computed
-    t_set_cooling : List of Float
+    t_set_cooling: List of Float
         Cooling set temperatures. If the air temperature without heating rises
         above this temperature, a cooling load that just fulfills this 
         temperature is computed
-    dt : Float
+    dt: Float
         Length of one timestep in hours. Standard is 1 hour
-    T_air_init : Float
+    T_air_init: Float
         Initial air temperature in Kelvin
-    T_iw_init : Float
+    T_iw_init: Float
         Initial temperature of the inner wall's capacity in Kelvin
-    T_ow_init : Float
+    T_ow_init: Float
         Initial temperature of the outer wall's capacity  in Kelvin
     
     Returns
     -------
-    T_air : Array of Float
+    T_air: Array of Float
         Indoor air temperature in Kelvin
-    Q_HC : Array of Float
+    Q_HC: Array of Float
         Heating (positive) and cooling (negative) loads in Watt
     
     Current limitations
@@ -175,30 +176,31 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
 #    withWindows     = houseData["withWindows"]      # If windows are existent
 #    withOuterwalls  = houseData["withOuterwalls"]   # If outer walls (including windows) are existent
     
-    R1i             = houseData["R1i"] # Resistor 1 inner wall
+    R1i             = houseData["R1i"] # Resistor 1 inner wall in K/W
     C1i             = houseData["C1i"] # Capacity 1 inner wall in Wh/K
-    Ai              = houseData["Ai"] # Inner wall area
-    RRest           = houseData["RRest"] # Resistor Rest outer wall
-    R1o             = houseData["R1o"] # Resistor 1 outer wall
+    Ai              = houseData["Ai"] # Inner wall area in m2
+    RRest           = houseData["RRest"] # Resistor Rest outer wall (outer side, between wall and ambient air) in K/W
+    R1o             = houseData["R1o"] # Resistor 1 outer wall in K/W
     C1o             = houseData["C1o"] # Capacity 1 outer wall in Wh/K
-    Ao              = houseData["Ao"] # Outer wall area
-    Aw              = houseData["Aw"] # Window area
-    At              = houseData["At"] # Transmitting area
+    Ao              = houseData["Ao"] # Outer wall area in m2
+    Aw              = houseData["Aw"] # Window area in m2
+    At              = houseData["At"] # Transmitting window area in m2
     
-    Vair            = houseData["Vair"]     # Volume of the air in the zone
-    rhoair          = houseData["rhoair"]   # Density of the air
+    Vair            = houseData["Vair"]     # Volume of the air in the zone in m3
+    rhoair          = houseData["rhoair"]   # Density of the air in Kg/m3
     cair            = houseData["cair"] # Heat capacity of the air in Wh/KgK
-    splitfac        = houseData["splitfac"] # Factor for conv. part of rad. through windows
+    splitfac        = houseData["splitfac"] # Factor for conv. part of solar rad. through windows
+                                            # radiative part => 1-splitfac
     
-    g               = houseData["g"]    # Total energy transmittance
+    g               = houseData["g"]    # Total energy transmittance through windows
     
     alphaiwi        = houseData["alphaiwi"] # Coefficient of heat transfer for inner walls
     alphaowi        = houseData["alphaowi"] # Outer wall's coefficient of heat transfer (inner side)
     alphaWall       = houseData["alphaWall"] # Heat transfer between exterior wall and eq. air temp.
     
-    A_win_tot = sum(Aw)
-    Ao_tot = sum(Ao)
-    A_ar = [Ao_tot, A_win_tot, Ai]
+    A_win_tot = sum(Aw) # total window area
+    Ao_tot = sum(Ao) # total exterior wall area
+    A_ar = [Ao_tot, A_win_tot, Ai] # array of total areas, used for calculating splitfactors 
 
     # Adjust RRest to incorporate alphaWall
     RRest = RRest + 1/alphaWall
@@ -211,10 +213,9 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     Q_solar_conv = np.sum(e_solar_conv, axis=1)
     
     # splitters:
-    # on each splitter: one output goes to outer wall, one goes to inner wall
-    # therefore dimension is 2 if inner walls exist => 2 outgoing signals
-    splitFacSolar = _calc_splitfactors(len(Ao), A_ar, Ao, Aw)
+    # radiative heat entrys are splitted onto exterior and interior walls
     # therm. splitter solar radiative:
+    splitFacSolar = _calc_splitfactors(len(Ao), A_ar, Ao, Aw)
     e_solar_rad = np.zeros((timesteps, len(At)))
     for i in range(len(At)):
         e_solar_rad[:,i] = solarRad_in[:,i] * (splitfac - 1) * g * At[i]
@@ -226,7 +227,7 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     Q_solarRadToInnerWall = np.sum(Q_solar_rad[:,:,1], axis=1)
     Q_solarRadToOuterWalli = np.sum(Q_solar_rad[:,:,0], axis=1)
     
-    # therm. splitter loads radiative:
+    # therm. splitter internal gains radiative:
     Q_loads_rad = krad * source_igRad
     splitFacLoads = _calc_splitfactors(1, A_ar, [0], [0])
     
@@ -254,7 +255,7 @@ def reducedOrderModelVDI(houseData, weatherTemperature, solarRad_in, equalAirTem
     T_air_prev = T_air_init
 
     for t in range(timesteps):
-        print t
+#        print t
         if t == 360:
             pass
         
@@ -340,7 +341,7 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
     x_noHeat = _calc_temperatue(A, rhs, q_air_fix=0, q_iw_fix=0, q_ow_fix=0)
     
     if x_noHeat[4] < t_set_heating:
-        # Indoor air temperature below heating set temperature
+        # Indoor air temperature below heating set temperature -> heating necessary
     
         # Use primary heater
         if np.argmax(heater_order==1) == 0 and heater_limit[0] > 0:
@@ -493,7 +494,7 @@ def _calc_timestep(A, rhs, t_set_heating=291.15, t_set_cooling=300.15,
                 return x_heating_1
 
     elif x_noHeat[4] > t_set_cooling:
-        # Indoor air temperature above cooling set temperature
+        # Indoor air temperature above cooling set temperature -> cooling necessary
     
         if np.argmax(cooler_order==1) == 0 and cooler_limit[0] < 0:
             x_cooling_1 = _calc_heatflow(A, rhs, t_air_set=t_set_cooling, q_air_fix=None, q_iw_fix=0, q_ow_fix=0)

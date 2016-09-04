@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import low_order_VDI
-import validationVDITestcases as tc
+import tcParams as tc
 
 import time
 

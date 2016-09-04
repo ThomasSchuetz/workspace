@@ -14,6 +14,30 @@ import sun
 def get_weather(filename, beta, gamma, albedo=0.2, timeZone=1,
                 altitude=0, location=(49.5, 8.5)):
     
+    """
+    Parse weather related data from TRY file
+
+    Arguments
+    ---------
+    filename: string
+              name of the TRY file to be parsed (not all of the data is used)
+    beta: array-like
+          angles between exterior wall areas and the ground
+    gamma: array-like
+           orientations of the exterior wall areas (N = 0, E = 90, S = 180, W = 270)
+    
+    Returns
+    -------
+    rad_sky: numpy ndarray
+             radiation coming from sky
+    rad_earth: numpy ndarray
+               radiation coming from ground
+    temp: numpy ndarray
+          air temperature
+    sun_rad: numpy ndarray
+             radiation on tilted surface areas for each orientation
+    """    
+    
     weather_data = np.loadtxt(filename, skiprows=38, usecols=(8,13,14,16,17))
     temp = weather_data[:,0]        # temperature
     sun_dir = weather_data[:,1]     # direct sun radiation

@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import low_order_VDI
-import validationVDITestcases as tc
+import tcParams as tc
 
 # Definition of time horizon
 times_per_hour = 60
