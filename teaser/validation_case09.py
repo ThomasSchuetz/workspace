@@ -11,8 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import low_order_VDI
-import validationVDITestcases as tc
-import equal_air_temperature as eq_air_temp
+import tcParams as tc
+import eqAirTemp as eq_air_temp
 
 # Definition of time horizon
 times_per_hour = 60

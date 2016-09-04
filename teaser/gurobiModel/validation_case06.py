@@ -84,6 +84,9 @@ model.addConstr(Tiw        == T_start)
 model.setObjective(sum(z[t] for t in range(timesteps)),gp.GRB.MINIMIZE)
 model.update()
 
+# deactivate console (gurobi) output
+model.params.outputFlag = 0.
+
 # Calculate indoor air temperature
 T_air, Q_HC, Q_iw, Q_ow = twoElements.twoElements(params, solRad, window, extWall, 
                                                   windowIndoorSurface, 

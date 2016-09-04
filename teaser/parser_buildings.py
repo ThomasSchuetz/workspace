@@ -41,6 +41,7 @@ def _parse_line(line):
 
 def parse_record(filename):
     """
+    This function parses house related data into a dictionary
     """
 
     # Initialize content
