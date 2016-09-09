@@ -1,271 +1,115 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jun 30 08:44:18 2016
+Created on Tue Aug 02 12:52:24 2016
 
-@author: Markus
+@author: tsz
 """
+from __future__ import division
 
-import math
-import parser_buildings
 import numpy as np
-import re
 
-def eqAirTemp(weatherData, houseData, solarRad_in, method="vdi"):      
-#%% partialEqAirTemp 
-    aowo            = houseData["aowo"] # Coefficient of absorption of the outer walls
-    # TODO: is this the correct key word for the emission parameter?
-    eowo            = houseData["epso"] # Coefficient of emission   of the outer walls
-    n               = len(houseData["orientationswallshorizontal"]) # Number of orientations (without ground)
-    T_ground        = houseData["temperatureground"] # Temperature of the ground in contact with ground slab
-    withLongwave    = True # If longwave radiation exchange is considered
-#    withInnerwalls  = houseData["withInnerwalls"]   # If inner walls are existent
-#    withOuterwalls  = houseData["withOuterwalls"]   # If outer walls (including windows) are existent
-#    withWindows     = houseData["withWindows"]      # If windows are existent
+def equal_air_temp(HSol, TBlaSky, TDryBul, sunblind, params):
+    """
+    Computes the equivalent air temperature on exterior walls without considering windows seperately
+    (several approaches possible here)
     
-    wf_wall     = houseData["weightfactorswall"]    # Weight factors of the walls
-    wf_win      = houseData["weightfactorswindow"]  # Weight factors of the windows
-    wf_ground   = houseData["weightfactorground"]   # Weight factor of the ground (0 if not considered)
-    
-    unitvec     = [1.0]*n    
-    
-    T_air   = weatherData[0] # outdoor air temperature
-    E_sky   = weatherData[1] # Iradiation from sky
-    E_earth = weatherData[2] # Iradiation from land surface
-    
-    I_max = houseData["Imax"] # Intensity at which the sunblind closes
-    gsunblind = houseData["gsunblind"] # Total energy transmittances if sunblind is closed
+    Arguments
+    ---------
+    HSol: numpy ndarray 
+           solar radiation per unit area
+    TBlaSky: numpy ndarray
+             black-body sky temperature
+    TDryBul: numpy ndarray
+             dry bulb temperature
+    sunblind: numpy ndarray
+              opening factor of sunblinds for each direction (0 = open to 1 = closed, sunblinds.sunblindsig)
+    params: dictionary
+            misc. constant input parameters
+            - eExt: float
+                    coefficient of emission of exterior walls (outdoor)
+            - aExt: float
+                    coefficient of absorption of exterior walls (outdoor)
+            - alpha_rad_wall: int/float
+                              heat transfer coefficient
+            - alpha_wall_out: int/float
+                              heat transfer coefficient
+            - wfWall: float
+                      weight factors of the walls
+            - wfWin: float
+                     weight factors of the windows
+            - wfGro: float
+                     weight factor of the ground (0 if not considered)
+            - T_Gro: int/float
+                     constant ground temperature
+            - withLongwave: boolean
+                            True if longwave radiation is considered
 
-    sunblindsig = [0]*n
-    for i in xrange(n):
-        if solarRad_in[i] > I_max:
-            sunblindsig[i] = 1-gsunblind[i]
-        else:
-            sunblindsig[i] = 0
+    Returns
+    -------
+    TEqAir: numpy ndarray
+            equivalent air temperature on exterior walls for convective heat entry
+    """
+    # Read parameters to improve readability in the equations
+    eExt = params["eExt"]
+    aExt = params["aExt"]
+    alphaRadWall = params["alpha_rad_wall"]
+    alphaWallOut = params["alpha_wall_out"]
+    wfWall = params["wfWall"]
+    wfWin = params["wfWin"]
+    wfGro = params["wfGro"]
+    TGro = params["T_Gro"]
+    n = len(wfWall)
     
-    T_eqLW      = [0]*n
-    T_eqSW      = [0]*n
-    T_eqWin     = [0]*n
-    T_eqWall    = [0]*n
+    # Compute equivalent long wave and short wave temperatures
+    delTEqLW = (TBlaSky - TDryBul) * (eExt * alphaRadWall / (alphaRadWall + alphaWallOut * 0.93))
+    delTEqSW = HSol * aExt / (alphaRadWall + alphaWallOut)
     
-    if method == "vdi":
-        #%% EqAirTempVDI
-        alphaowo    = houseData["alphaowo"] # Outer wall's coefficient of heat transfer (outer side)
-        orientationswallshorizontal = houseData["orientationswallshorizontal"] # orientations of the walls against the vertical (wall,roof)    
-        
-        # scalars
-        T_earth = ((-E_earth/(0.93*5.67))**0.25)*100 # -273.15
-        T_sky   = ((E_sky/(0.93*5.67))**0.25)*100    # -273.15    
-        
-        if abs(E_sky+E_earth)<0.1:
-            alpharad = 5.0
-        else:
-            alpharad = (E_sky+(E_earth/0.93))/(T_sky-T_earth)        
-        
-        phiprivate = [0]*n
-        for i in xrange(n):
-            phiprivate[i] = (unitvec[i]+math.cos(orientationswallshorizontal[i]*math.pi/180))/2            
-        
-        for i in xrange(n):
-            T_eqLW[i] = ((T_earth-T_air)*(unitvec[i]-phiprivate[i])+(T_sky-T_air)*phiprivate[i])*(eowo*alpharad/alphaowo)
-            T_eqSW[i] = solarRad_in[i]*aowo/(alphaowo)
-           
-        for i in xrange(n):
-            if withLongwave == True:
-                T_eqWin[i]  = T_air*unitvec[i]+T_eqLW[i]*abs(sunblindsig[i]-unitvec[i])
-                T_eqWall[i] = T_air*unitvec[i]+T_eqLW[i]+T_eqSW[i]
-            else:
-                T_eqWin[i]  = T_air*unitvec[i]
-                T_eqWall[i] = T_air*unitvec[i]+T_eqSW[i]
-        
-        # scalar products        
-        temp = [T_eqWin[i]*wf_win[i] + T_eqWall[i]*wf_wall[i] for i in xrange(n)]
-        equalAirTemp = sum(temp[i] for i in xrange(len(temp))) + T_ground*wf_ground
-        
-        return equalAirTemp
-        
-    elif method == "ebcMod":
-        #%% EqAirTempEBCMod
-        orientationswallshorizontal = houseData["orientationswallshorizontal"] # orientations of the walls against the vertical (wall,roof)
-        # TODO: which parameters in the houseData??
-        alphaconv_wall  = houseData[""] # Outer walls coefficient of heat transfer (outerside)
-        alphaconv_win   = houseData[""] # Outer walls coefficient of heat transfer (outerside)
-        awin = houseData["awin"] # Coefficient of absorption of the window
-        
-        # scalars
-        T_earth = ((-E_earth/(0.93*5.67))**0.25)*100 # -273.15
-        T_sky   = ((E_sky/(5.67))**0.25)*100         # -273.15        
-        
-        if abs(E_sky+E_earth)<0.1:
-            alpharad = 5.0
-        else:
-            alpharad = (E_sky+(E_earth/0.93))/(T_sky-T_earth)
-            
-        phiprivate = [0]*n
-        for i in xrange(n):
-            phiprivate[i] = (unitvec[i]+math.cos(orientationswallshorizontal[i]*math.pi/180))/2
-        
-        T_eqLW_win  = [0]*n
-        T_eqSW_win  = [0]*n
-        for i in xrange(n):
-            T_eqLW[i]     = ((T_earth-T_air)*(unitvec[i]-phiprivate[i])+
-                            (T_sky-T_air)*phiprivate[i])*(eowo*alpharad/(alpharad+alphaconv_wall))
-            T_eqLW_win[i] = ((T_earth-T_air)*(unitvec[i]-phiprivate[i])+
-                            (T_sky-T_air)*phiprivate[i])*(eowo*alpharad/(alpharad+alphaconv_win))*abs(sunblindsig[i]-unitvec[i])
-            T_eqSW[i]     = solarRad_in[i]*aowo/(alpharad+alphaconv_wall);
-            T_eqSW_win[i] = solarRad_in[i]*awin/(alpharad+alphaconv_win)
-        
-        for i in xrange(n):
-            if withLongwave == True:
-                T_eqWin[i]  = T_air*unitvec[i]+T_eqLW_win[i]+T_eqSW_win[i]
-                T_eqWall[i] = T_air*unitvec[i]+T_eqLW[i]    +T_eqSW[i]
-            else:
-                T_eqWin[i]  = T_air*unitvec[i]+T_eqSW_win[i]
-                T_eqWall[i] = T_air*unitvec[i]+T_eqSW[i]
-        
-        # scalar products
-        temp = [T_eqWall[i]*wf_wall[i] for i in xrange(n)]
-        equalAirTemp = sum(temp[i] for i in xrange(len(temp))) + T_ground*wf_ground
-        temp = [T_eqWin[i]*wf_win for i in xrange(n)]
-        equalAirTempWindow = sum(temp[i] for i in xrange(len(temp)))
-        
-        return equalAirTemp, equalAirTempWindow
-        
-    elif method == "simple":
-        #%% EqAirTempSimple
-        alphaowo    = houseData["alphaowo"] # Outer wall's coefficient of heat transfer (outer side)
-        phiprivate  = 0.5 
-        
-        T_earth = ((-E_earth/(0.93*5.67))**0.25)*100 # -273.15
-        T_sky   = ((E_sky/(0.93*5.67))**0.25)*100    # -273.15
-        
-        if abs(E_sky+E_earth)<0.1:
-            alpharad = 5.0
-        else:
-            alpharad = (E_sky+(E_earth/0.93))/(T_sky-T_earth)
-        
-        # scalar
-        T_eqLWs = ((T_earth-T_air)*(1-phiprivate)+(T_sky-T_air)*phiprivate)*(eowo*alpharad/(alphaowo*0.93))
-
-        for i in xrange(n):
-            T_eqLW[i] = T_eqLWs*abs(sunblindsig[i]-unitvec[i])
-            T_eqSW[i] = solarRad_in[i]*aowo/alphaowo
-
-        for i in xrange(n):
-            if withLongwave == True:
-                T_eqWin[i]  = (T_air*unitvec[i])+T_eqLW[i]
-                T_eqWall[i] = (T_air+T_eqLWs)*unitvec[i]+T_eqSW[i]
-            else:
-                T_eqWin[i]  = T_air*unitvec[i]
-                T_eqWall[i] = T_air*unitvec[i]+T_eqSW[i]
-
-        # scalar products        
-        temp = [T_eqWin[i]*wf_win[i] + T_eqWall[i]*wf_wall[i] for i in xrange(n)]
-        equalAirTemp = sum(temp[i] for i in xrange(len(temp))) + T_ground*wf_ground
-        
-        return equalAirTemp
+    # Compute equivalent window and wall temperatures
+    if params["withLongwave"]:
+        TEqWin = np.array([TDryBul + delTEqLW * (1 - sunblind[:,i]) for i in range(n)]).T
+        TEqWall = np.array([TDryBul + delTEqLW[:,i] + delTEqSW[:,i] for i in range(n)]).T
     else:
-        pass
-
-#%%
-def getTRYData(houseData):
+        TEqWin = np.array([TDryBul for i in range(n)]).T
+        TEqWall = np.array([TDryBul + delTEqSW[:,i] for i in range(n)]).T
     
-    rad_sky     = []
-    rad_earth   = []
-    temp        = []
-    sun_dir     = []
-    sun_diff    = []
+    # Compute equivalent air temperature
+    TEqAir = np.dot(TEqWall, wfWall) + np.dot(TEqWin, wfWin) + TGro * wfGro
     
-    # Parse all lines 
-    with open("TRY2010_12_Jahr.dat") as f:
-        # Read all lines at once
-        all_lines = f.readlines()
-        
-        # Skip the first 38 lines
-        for i in range(38, len(all_lines)):
-            
-            s = all_lines[i].split()
+    # Return result
+    return TEqAir
 
-            rad_sky.append(float(s[16]))
-            rad_earth.append(float(s[17]))
-            temp.append(float(s[8]))
-            sun_dir.append(float(s[13]))
-            sun_diff.append(float(s[14]))
-        
-        # get location data
-        if re.match("Lage", all_lines[2]) != None:
-            i = all_lines[2].replace("<- B.","").replace("<- L.","").replace(" ","").split("N")
-            j = filter(None, re.split("[° \']+",i[0].replace("Lage:","")))
-            latitude = float(j[0])+float(j[1])/60
-            i = i[1].split("O")
-            j = filter(None, re.split("[° \']+",i[0]))
-            longitude = float(j[0])+float(j[1])/60
-            altitude = float(i[1].replace("Meter\xfcber",""))
-            
-        location = (latitude, longitude)
-        
-        # calculate orientation depending iradiation
-        import sun
-        timeZone = 1
-        albedo = 0.2
-        
-        beta = houseData["orientationswallshorizontal"]        
-        n = len(beta)        
-        gamma = [0,90,180,270]
-        if n == 4:
-            pass
-        elif n == 5:
-            gamma.append(0)
-        elif n == 6:
-            # in the current Teaser data file: beta = [45,90,90,45,90,90]
-            gamma = [0,0,90,0,180,270]
-        
-        # Sun radiation on surfaces
-        SunRad  = sun.getSolarGains(0, 3600, 8760, 
-                                    timeZone=timeZone,
-                                    location=location,
-                                    altitude=altitude,
-                                    beta=beta,
-                                    gamma=gamma,
-                                    beam = np.array(sun_dir),
-                                    diffuse = np.array(sun_diff),
-                                    albedo = albedo)
-    
-    return rad_sky, rad_earth, temp, SunRad
-
-#%%       
 if __name__ == "__main__":
+    times_per_hour = 60
+    no_tile = 60
     
-    # get building inputs
-    filename = "TEASER4_meine_Geo.mo"
-    houseData = parser_buildings.parse_record(filename)    
+    t_outside_raw = np.loadtxt("inputs/case08_t_amb.csv", delimiter=",")
+    t_outside = np.array([t_outside_raw[2*i,1] for i in range(24)])
+    t_outside_adj = np.repeat(t_outside, times_per_hour)
+    t_outside_tiled = np.tile(t_outside_adj, no_tile)
     
-    # get weather inputs
-    raw_inputs = {}
- 
-    (raw_inputs["solar_irrad_sky"],
-    raw_inputs["solar_irrad_earth"],
-    raw_inputs["temperature"], solarRad_in) = getTRYData(houseData)    
+    q_sol_rad_win_raw = np.loadtxt("inputs/case08_q_sol_win.csv", usecols=(1,2))
+    solarRad_win = q_sol_rad_win_raw[0:24,:]
     
-    # results
-    t_equiv = []
+    sunblind_in = np.zeros_like(solarRad_win)
+    sunblind_in[solarRad_win > 100] = 0.85
+    sunblind_in_adj = np.repeat(sunblind_in, times_per_hour, axis=0)
     
-    method = "vdi"
-    for i in xrange(len(raw_inputs["temperature"])):
-        if method == "ebcMod":
-            equalAirTemp, equalAirTempWindow = eqAirTemp([raw_inputs["temperature"][i],
-                                                          raw_inputs["solar_irrad_sky"][i],
-                                                          raw_inputs["solar_irrad_earth"][i]],
-                                                          houseData,
-                                                          solarRad_in[:,i],
-                                                          method = method)
-            t_equiv.append((equalAirTemp, equalAirTempWindow))
-        else:
-            equalAirTemp = eqAirTemp([raw_inputs["temperature"][i],
-                                  raw_inputs["solar_irrad_sky"][i],
-                                  raw_inputs["solar_irrad_earth"][i]],
-                                  houseData,
-                                  solarRad_in[:,i],
-                                  method = method)
-            t_equiv.append(equalAirTemp)
-        
+    q_sol_rad_wall_raw = np.loadtxt("inputs/case08_q_sol_wall.csv", usecols=(1,2))
+    solarRad_wall = q_sol_rad_wall_raw[0:24,:]
+    solarRad_wall_adj = np.repeat(solarRad_wall, times_per_hour, axis=0)
+    solarRad_wall_tiled = np.tile(solarRad_wall_adj.T, no_tile).T
+    
+    t_black_sky = np.zeros_like(t_outside) + 273.15
+    
+    params = {"aExt": 0.7,
+              "eExt": 0.9,
+              "wfWall": [0.05796831135677373, 0.13249899738691134],
+              "wfWin": [0.4047663456281575, 0.4047663456281575],
+              "wfGro": 0,
+              "T_Gro": 273.15+12,
+              "alpha_wall_out": 20,
+              "alpha_rad_wall": 5,
+              "withLongwave": False}
+    
+    t_equal_air = equal_air_temp(solarRad_wall, t_black_sky, t_outside, sunblind_in, params)
