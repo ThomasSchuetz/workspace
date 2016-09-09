@@ -13,6 +13,7 @@ import parse_inputs
 import clustering_medoid as clustering
 import numpy as np
 import datetime
+
 """
 Inputs: heat demand (includes space heating and dhw)
         electricity demand
@@ -21,28 +22,28 @@ Inputs: heat demand (includes space heating and dhw)
         weights for typical days
         ambient temperature
 """
+
+# Print and store starting time
 time = {}
-datetime.datetime.now()
 time["begin"] = datetime.datetime.now()
-print "This program begin at " + str(datetime.datetime.now()) + "."
+print "This program starts at " + str(datetime.datetime.now()) + "."
 
-# Create lists with buildings
-    
-design_heat_loads = {}
 
+# Read design heat loads of participating buildings
 with open("design_heat_load.txt") as f:
     for line in f:
         splitLine = line.split()
 design_heat_loads = {splitLine[2*n] : int(splitLine[(2*n+1)]) / 1000 for n in range(int(len(splitLine)/2))} 
 
+# Create a list with all participating houses
 houses = []
 for n in range(int(len(splitLine)/2)):
     houses.append(splitLine[2*n])
 
-house = []
-
 number_houses = len(houses)
 
+# Store solar irradiation onto roof areas, ambient temperatures as well as 
+# DHW, space heating and electricity demand profiles
 raw_inputs = {}
 raw_inputs["solar_irrad"] = np.loadtxt("raw_inputs/solar_rad_35deg.csv") / 1000
 raw_inputs["temperature"] = np.loadtxt("raw_inputs/temperature.csv")
@@ -55,8 +56,7 @@ for n in range(number_houses):
     raw_inputs[n] = {"electricity": np.loadtxt("raw_inputs/elec_"+houses[n]+".csv") / 1000,
                      "heat": (dhw[n] + sh[n]) / 1000}
 
-# Clustering
-
+# Perform clustering
 inputs_clustering = []
 for n in range(number_houses):
     inputs_clustering.append(raw_inputs[n]["electricity"])
@@ -81,11 +81,9 @@ for n in range(number_houses):
                     "temperature":      inputs[-1],
                     "solar_irrad":      inputs[-2],
                     "weights":          nc}
-#clustered["z"]           = z
 
 # Read devices, economic date and other parameters
 devs = {}
-
 for n in range(number_houses):
     devs[n] = parse_inputs.read_devices(timesteps=len_day, days=number_clusters,
                          temperature_ambient=clustered[n]["temperature"],
@@ -97,21 +95,11 @@ for n in range(number_houses):
 par = parse_inputs.compute_parameters(par, number_clusters, len_day)
 
 days = range(number_clusters)
-dt = par["dt"]
-times = range(24)
+times = range(len_day)
 
-# Set economic parameters
-#eco["sub_chp"] = 2 * eco["sub_chp"] # Reduce or add the subsidy for chp
-#
-#dev = ["bat","pv","eh","stc","hp","chp","boiler","tes"]
-#
-#for n in range(number_houses):
-#    for i in dev:
-#        devs[n][i]["c_inv_fix"] = devs[n][i]["c_inv_fix"] * 1
-#        devs[n][i]["c_inv_var"] = devs[n][i]["c_inv_var"] * 1
-
-# Subproblem Object
-for n in xrange(len(houses)):
+# Create subproblem objects
+house = []
+for n in range(len(houses)):
     house.append(object_subproblem.house(par, eco, devs, houses))
 
 # P_demand for all the buildings in each time step
@@ -120,7 +108,7 @@ for d in days:
     for t in times:
         P_demand[d,t] = sum(clustered[n]["electricity"][d,t] for n in range(number_houses))     
 
-# Create masterproblem
+# Create masterproblem object
 mp = object_masterproblem.Master(len(houses), par, houses, eco, P_demand, clustered)
 
 # Store results of masterproblem
@@ -193,7 +181,6 @@ while it_counter < iteration:
     print
     print "Begin iteration " + str(it_counter)
     print
-    datetime.datetime.now() # get the time 
     time_begin = datetime.datetime.now()
     print "*********************************************"
     print "The " + str(it_counter) + " iteration begins at " + str(datetime.datetime.now())+"."

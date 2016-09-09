@@ -7,7 +7,7 @@
 # http://en.wikipedia.org/wiki/Branch_and_price
 
 import numpy as np
-import model_masterproblem_test_2
+import model_masterproblem
 
 class Master(object):
     """
@@ -46,30 +46,30 @@ class Master(object):
         self.marginals["pi"] = []
         self.proposals["house"] = []
         
-    def update_timestep(self, P_demand, houses):
-        """
-        Each new timestep requires a new load profile as well as a new RES profile
-        """
-        dev = ["bat","pv","eh","stc","hp","chp","boiler","tes"]
-        self.count_iteration = 0
-        self.P_demand = P_demand
-        self.costs = []
-        self.proposals = {}
-        self.bounds = {}
-        self.marginals = {}
-        self.marginals["sigma"] = {}
-        for n in range(len(houses)):
-            self.marginals["sigma"][n] = []
-        # for device in ("pv","hp","chp"):
-        #    self.proposals[device] = []
-            #self.bounds[device] = []
-        self.marginals["pi"] = []
-        self.proposals["chp"] = []
-        self.proposals["hp"] = []
-        self.proposals["pv"] = []
-        self.proposals["boiler"] = []
-        self.proposals["eh"] = []
-        self.proposals["house"] = []
+#    def update_timestep(self, P_demand, houses):
+#        """
+#        Each new timestep requires a new load profile as well as a new RES profile
+#        """
+#        dev = ["bat","pv","eh","stc","hp","chp","boiler","tes"]
+#        self.count_iteration = 0
+#        self.P_demand = P_demand
+#        self.costs = []
+#        self.proposals = {}
+#        self.bounds = {}
+#        self.marginals = {}
+#        self.marginals["sigma"] = {}
+#        for n in range(len(houses)):
+#            self.marginals["sigma"][n] = []
+#        # for device in ("pv","hp","chp"):
+#        #    self.proposals[device] = []
+#            #self.bounds[device] = []
+#        self.marginals["pi"] = []
+#        self.proposals["chp"] = []
+#        self.proposals["hp"] = []
+#        self.proposals["pv"] = []
+#        self.proposals["boiler"] = []
+#        self.proposals["eh"] = []
+#        self.proposals["house"] = []
         
     def update_proposals(self, costs, proposals, houses):
         """
@@ -87,7 +87,7 @@ class Master(object):
             #if self.count_iteration > 1:
                # self.update_bounds()
             
-        (r_obj, r) = model_masterproblem_test_2.optimize(self, False) 
+        (r_obj, r) = model_masterproblem.optimize(self, False) 
         self.marginals["pi"].append(r["pi"])
         
         for j in range(len(houses)):        
@@ -113,7 +113,7 @@ class Master(object):
         Finalize the Branch&Price process by solving the masterproblem with 
             binaries instead of continuous variables
         """
-        (r_obj, r) = model_masterproblem_test_2.optimize(self, True, max_time)
+        (r_obj, r) = model_masterproblem.optimize(self, True, max_time)
         
         return (r_obj, r)
 #    
