@@ -127,55 +127,7 @@ it_counter = 0 # Iteration counter
 iteration = 10 # Determine the number of iterations
 gap_standard = 0.0001 # Set the gap to 0.0001
 
-# Process master and subproblems
-#while it_counter < iteration:
-#    print
-#    print "Begin iteration " + str(it_counter)
-#    print
-#    datetime.datetime.now() # get the time 
-#    time_begin = datetime.datetime.now()
-#    print "*********************************************"
-#    print "The " + str(it_counter) + " iteration begins at " + str(datetime.datetime.now())+"."
-#    print "*********************************************" 
-#    costs = []
-#    proposals = {}
-#    proposals["chp"] = []
-#    proposals["hp"] = []
-#    proposals["pv"] = []
-#    proposals["eh"] = []
-
-
-#    proposals["house"] = []    
-#    
-#    opti_res = {}
-#    
-#    for n in range(number_houses):
-#        marginals = {}        
-#        marginals["sigma"] = r["sigma"][n]
-#        marginals["pi"] = r["pi"]
-#        opti_res[n] = house[n].compute_proposal(houses, marginals, eco, devs[n], clustered[n], par)      
-#        costs.append(opti_res[n][26])
-#        proposals["chp"].append(opti_res[n][27]["chp"])
-#        proposals["hp"].append(opti_res[n][27]["hp"])
-#        proposals["pv"].append(opti_res[n][27]["pv"])
-#        proposals["eh"].append(opti_res[n][27]["eh"])
-#        proposals["house"].append(opti_res[n][27]["house"])
-#                
-#    (r_obj, r) = mp.update_proposals(costs, proposals, houses)
-#
-#    res_obj.append(r_obj)
-#    res_marginals.append(r["pi"])
-#    print
-#    print "End iteration " + str(it_counter)
-#    print
-#    it_counter += 1
-#    
-#    datetime.datetime.now()
-#    time_interval = datetime.datetime.now() - time_begin
-#    time["time_interval_"+str(it_counter)] = time_interval.seconds
-#
 opti_res = {}
-
 
 while it_counter < iteration:
     print
@@ -222,10 +174,6 @@ while it_counter < iteration:
     datetime.datetime.now()
     time_interval = datetime.datetime.now() - time_begin
     time["time_interval_"+str(it_counter)] = time_interval.seconds
-
-
-
-
 
 
 
