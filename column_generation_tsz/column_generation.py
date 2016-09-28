@@ -13,6 +13,7 @@ import parse_inputs
 import clustering_medoid as clustering
 import numpy as np
 import datetime
+import xlrd
 
 """
 Inputs: heat demand (includes space heating and dhw)
@@ -28,17 +29,25 @@ time = {}
 time["begin"] = datetime.datetime.now()
 print "This program starts at " + str(datetime.datetime.now()) + "."
 
-
 # Read design heat loads of participating buildings
-with open("design_heat_load.txt") as f:
-    for line in f:
-        splitLine = line.split()
-design_heat_loads = {splitLine[2*n] : int(splitLine[(2*n+1)]) / 1000 for n in range(int(len(splitLine)/2))} 
 
-# Create a list with all participating houses
-houses = []
-for n in range(int(len(splitLine)/2)):
-    houses.append(splitLine[2*n])
+#with open("design_heat_load.txt") as f:
+#    for line in f:
+#        splitLine = line.split()
+#design_heat_loads = {splitLine[2*n] : int(splitLine[(2*n+1)]) / 1000 for n in range(int(len(splitLine)/2))} 
+#
+## Create a list with all participating houses
+#houses = []
+#for n in range(int(len(splitLine)/2)):
+#    houses.append(splitLine[2*n])
+   
+sheet_heat_load = xlrd.open_workbook("further_parameters.xlsx").sheet_by_name("design_heat_load")
+
+design_heat_loads = {}
+for row in range(1, sheet_heat_load.nrows):
+    design_heat_loads[str(sheet_heat_load.cell_value(row, 0))] = float(sheet_heat_load.cell_value(row, 1))/1000
+    
+houses = design_heat_loads.keys()
 
 number_houses = len(houses)
 
