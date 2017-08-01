@@ -64,10 +64,8 @@ def cluster(inputs,
         inputs_add_trans.append(vals.reshape((len_day, days), order="F"))    
 
 ###############################################################################    
-    medoids = True
     # Compute clusters
     results = clustering_exact.cluster(inputs=inputs,
-                                       medoids=medoids,
                                        number_clusters=number_clusters,
                                        norm=norm,
                                        time_limit=time_limit,
