@@ -10,6 +10,7 @@ from __future__ import division
 import numpy as np
 import math
 import k_medoids
+import k_medoids_neu
 import clustering_helpers
 
 def _distances(values, norm=2):
@@ -51,7 +52,8 @@ def cluster(inputs,
             number_clusters=12, 
             norm=2, 
             time_limit=300,
-            mip_gap=0.0):
+            mip_gap=0.0,
+            neu=False):
     """
     Cluster a set of inputs into clusters by solving a k-medoid problem.
     
@@ -106,7 +108,10 @@ def cluster(inputs,
     d = _distances(L, norm)
 
     # Execute optimization model
-    opt_function = k_medoids.k_medoids
+    if neu:
+        opt_function = k_medoids_neu.k_medoids
+    else:
+        opt_function = k_medoids.k_medoids
     (y, z, obj, times, gap) = opt_function(d, number_clusters, time_limit, mip_gap)
     
     # Section 2.3 and retain typical days

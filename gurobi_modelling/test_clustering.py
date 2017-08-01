@@ -16,7 +16,7 @@ houses = ("03", "07", "10")
 min_days = 1
 max_days = 12
 
-def cluster(building, number_clusters):
+def cluster(building, number_clusters, neu=False):
     
     raw_inputs = {}
     raw_inputs["electricity"] = np.loadtxt("raw_inputs/building_"+house+"/electricity.csv")
@@ -39,11 +39,12 @@ def cluster(building, number_clusters):
                                   method="medoid",
                                   number_clusters=number_clusters,
                                   time_limit=600,
-                                  mip_gap=0.0)
+                                  mip_gap=0.0,
+                                  neu=neu)
     (inputs, typ_inputs_add, nc, scaling_factors, z, times, obj, gap) = clus_res
     
-    filename = ("results/res_" + house + "_alt_" + str(number_clusters) + ".pkl")
-#    filename = ("results/res_" + house + "_neu_" + str(number_clusters) + ".pkl")
+#    filename = ("results/res_" + house + "_alt_" + str(number_clusters) + ".pkl")
+    filename = ("results/res_" + house + "_neu_" + str(number_clusters) + ".pkl")
     with open(filename, "wb") as f_in:
         pickle.dump(times, f_in, pickle.HIGHEST_PROTOCOL)
         pickle.dump(obj, f_in, pickle.HIGHEST_PROTOCOL)
@@ -51,5 +52,5 @@ def cluster(building, number_clusters):
 
 for house in houses:
     for number_clusters in range(min_days, max_days+1):
-        cluster(house, number_clusters)
+        cluster(house, number_clusters, neu=True)
 

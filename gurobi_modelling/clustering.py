@@ -18,7 +18,8 @@ def cluster(inputs,
             reset_randomness=True,
             norm=2,
             time_limit=300, 
-            mip_gap=0.0):
+            mip_gap=0.0,
+            neu=False):
     """
     Parameters
     ----------
@@ -69,7 +70,8 @@ def cluster(inputs,
                                        number_clusters=number_clusters,
                                        norm=norm,
                                        time_limit=time_limit,
-                                       mip_gap=mip_gap)
+                                       mip_gap=mip_gap,
+                                       neu=neu)
     (scaled_typ_days, nc, z, scaling_factors, times, obj, gap) = results
 
     # Determine additional input values for the chosen (scaled) typdays
