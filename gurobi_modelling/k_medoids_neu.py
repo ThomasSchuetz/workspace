@@ -38,7 +38,7 @@ def k_medoids(distances, number_clusters, timelimit=100, mipgap=0.0001):
     """
     
     # Distances is a symmetrical matrix, extract its length
-    length = distances.shape[0]
+    length = int(distances.shape[0])
     
     # Create model
     model = gp.Model("k-Medoids-Problem")
