@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Dec 10 11:47:53 2015
 
-@author: tsz
-"""
 from __future__ import division
 import numpy as np
 import pickle
@@ -17,7 +13,6 @@ min_days = 1
 max_days = 12
 
 def cluster(building, number_clusters, neu=False):
-    
     raw_inputs = {}
     raw_inputs["electricity"] = np.loadtxt("raw_inputs/building_"+house+"/electricity.csv")
     raw_inputs["dhw"]         = np.loadtxt("raw_inputs/building_"+house+"/dhw.csv")
@@ -53,4 +48,3 @@ def cluster(building, number_clusters, neu=False):
 for house in houses:
     for number_clusters in range(min_days, max_days+1):
         cluster(house, number_clusters, neu=True)
-
