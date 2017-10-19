@@ -17,7 +17,20 @@ def lese_geraete(tabelle, technologie):
     tabelle : Geoeffnete Tabelle
     """
     
+    ergebnis = {}
     
+    for i in range(1, tabelle.nrows):
+        ergebnis[i] = {"c_inv": tabelle.cell_value(i,1),
+                       "q_min": tabelle.cell_value(i,2),
+                       "q_max": tabelle.cell_value(i,3)}
+        
+        if technologie == "KWK":
+            ergebnis[i]["sigma"] = tabelle.cell_value(i,4)
+            ergebnis[i]["omega"] = tabelle.cell_value(i,5)
+        elif technologie == "Kessel":
+            ergebnis[i]["eta"] = tabelle.cell_value(i,4)
+    
+    return ergebnis
 
 def lese_oekonomische_parameter(tabelle):
     """
@@ -39,10 +52,18 @@ def lese_oekonomische_parameter(tabelle):
     # Die eingelesenen Parameterwerte werden zurueckgegeben
     return ergebnis
 
-# Der folgende Abschnitt ist lediglich ein Test, um zu ueberpruefen, ob alle 
-# Parameter korrekt eingelesen werden.
-if __name__ == "__main__":
-    excel_datei = "inputs.xlsx"
+
+def lese_sonstige_parameter(waermebedarf):
+    """
+    """
+    
+    ergebnis = {"anz_zeitschritte": len(waermebedarf),
+                "zeitdiskretisierung": round(8760/len(waermebedarf))}
+    
+    return ergebnis
+
+
+def lese_alle_parameter(waermebedarf, dateiname="inputs.xlsx"):
     # Oeffne eine existierende Excel-Datei
     geoeffnete_datei = xlrd.open_workbook(excel_datei)
 
@@ -56,4 +77,17 @@ if __name__ == "__main__":
     parameter_kwk = lese_geraete(tabelle_kwk, "KWK")
     
     tabelle_kessel = geoeffnete_datei.sheet_by_name("Kessel")
-    parameter_kwk = lese_geraete(tabelle_kessel, "Kessel")
+    parameter_kessel = lese_geraete(tabelle_kessel, "Kessel")
+    
+    # Sonstige Parameter
+    parameter_sonstiges = lese_sonstige_parameter(waermebedarf)
+    
+    # Ergebnisse zurueckgeben
+    return (parameter_oekonomie, parameter_kwk, parameter_kessel, parameter_sonstiges)
+
+# Der folgende Abschnitt ist lediglich ein Test, um zu ueberpruefen, ob alle 
+# Parameter korrekt eingelesen werden.
+if __name__ == "__main__":
+    excel_datei = "inputs.xlsx"
+    
+    (par_oekonomie, par_kwk, par_kessel) = lese_alle_parameter(excel_datei)
