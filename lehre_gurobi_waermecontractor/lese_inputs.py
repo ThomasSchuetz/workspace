@@ -7,6 +7,7 @@ Created on Wed Oct 18 12:31:38 2017
 
 from __future__ import division
 import xlrd
+import numpy as np
 
 def lese_geraete(tabelle, technologie):
     """
@@ -63,7 +64,16 @@ def lese_sonstige_parameter(waermebedarf):
     return ergebnis
 
 
-def lese_alle_parameter(waermebedarf, dateiname="inputs.xlsx"):
+def lese_waermebedarf(tabelle):
+    """
+    """
+    
+    ergebnis = np.array([tabelle.cell_value(i,1) for i in range(1, tabelle.nrows)])
+    
+    return ergebnis
+
+
+def lese_alle_parameter(dateiname="inputs.xlsx"):
     # Oeffne eine existierende Excel-Datei
     geoeffnete_datei = xlrd.open_workbook(excel_datei)
 
@@ -78,16 +88,23 @@ def lese_alle_parameter(waermebedarf, dateiname="inputs.xlsx"):
     
     tabelle_kessel = geoeffnete_datei.sheet_by_name("Kessel")
     parameter_kessel = lese_geraete(tabelle_kessel, "Kessel")
+
+    # Speicher beide Dictionaries in einem Gesamt-Dictionary
+    parameter_geraete = {"KWK": parameter_kwk,
+                         "Kessel": parameter_kessel}
+    
+    tabelle_waermebedarf = geoeffnete_datei.sheet_by_name("Waermebedarf")
+    waermebedarf = lese_waermebedarf(tabelle_waermebedarf)
     
     # Sonstige Parameter
     parameter_sonstiges = lese_sonstige_parameter(waermebedarf)
     
     # Ergebnisse zurueckgeben
-    return (parameter_oekonomie, parameter_kwk, parameter_kessel, parameter_sonstiges)
+    return (parameter_oekonomie, parameter_geraete, waermebedarf, parameter_sonstiges)
 
 # Der folgende Abschnitt ist lediglich ein Test, um zu ueberpruefen, ob alle 
 # Parameter korrekt eingelesen werden.
 if __name__ == "__main__":
     excel_datei = "inputs.xlsx"
     
-    (par_oekonomie, par_kwk, par_kessel) = lese_alle_parameter(excel_datei)
+    (par_oekonomie, par_geraete, waermebedarf, par_sonst) = lese_alle_parameter(excel_datei)
